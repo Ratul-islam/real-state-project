@@ -38,7 +38,7 @@ export const listingItems = [
         label: "Header Map Style",
         href: "/header-map-style",
       },
-      { label: "Map V1", href: "/map-v1" },
+      { label: "Map V1", href: "/map" },
       { label: "Map V2", href: "/map-v2" },
       { label: "Map V3", href: "/map-v3" },
       { label: "Map V4", href: "/map-v4" },

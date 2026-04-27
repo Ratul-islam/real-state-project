@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 
 export const metadata = {
-  title: "Map V1 || Homez - Real Estate NextJS Template",
+  title: "Map Filter bankers housing society",
 };
 
 export default function MapV1() {

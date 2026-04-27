@@ -10,7 +10,6 @@ export const metadata = {
   title: "Bankers' Home Solution",
 };
 
-// ✅ server-side fetch (only home solution)
 async function fetchListings() {
   try {
     const payload = await getListings({
@@ -21,7 +20,6 @@ async function fetchListings() {
       order: "desc",
     });
 
-    // ✅ normalize response: { status, message, data: { items } }
     const items = payload?.data?.items ?? payload?.items ?? payload?.data ?? [];
     return Array.isArray(items) ? items : [];
   } catch {

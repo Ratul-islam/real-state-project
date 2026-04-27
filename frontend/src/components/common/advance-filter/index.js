@@ -158,7 +158,7 @@ const locationOptions = useMemo(
     };
 
     const qs = toQS(query);
-    router.push(qs ? `/map-v1?${qs}` : "/map-v1");
+    router.push(qs ? `/map?${qs}` : "/map");
   };
 
   return (

@@ -5,42 +5,20 @@ import {
   getListingById as getListingByIdService,
   updateListingById,
   deleteListingById,
+  getListingByTitleService,
+  getListingBySlugService,
 } from "./listing.services.js";
 import { sendError, sendSuccess } from "../../utils/responses.js";
 import { CreateListingInput } from "./listing.type.js";
 import { AppError } from "../../utils/AppError.js";
-
-function normalizeListingPayload(payload: any) {
-  const p = { ...(payload || {}) };
-
-  if (p.media) {
-    if (!Array.isArray(p.media.gallery)) p.media.gallery = p.media.gallery ? p.media.gallery : [];
-  }
-
-  const hasLat = p.lat !== undefined && p.lat !== null;
-  const hasLng = p.lng !== undefined && p.lng !== null;
-
-  if (hasLat && hasLng) {
-    const lat = Number(p.lat);
-    const lng = Number(p.lng);
-
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      p.geo = { type: "Point", coordinates: [lng, lat] };
-    }
-  }
-
-  if (p.floorPlans !== undefined) {
-    if (!Array.isArray(p.floorPlans)) p.floorPlans = [];
-  }
-
-  return p;
-}
+import { normalizeListingPayload } from "../../utils/listings.js";
 
 export const addListing = async (
   request: FastifyRequest,
   reply: FastifyReply
 ) => {
   const data: CreateListingInput = request.body as any;
+
   try {
     if (!data?.media?.cover?.url) {
       return sendError(reply, {
@@ -48,9 +26,20 @@ export const addListing = async (
         statusCode: 400,
       });
     }
-    
+    const exists = await getListingByTitleService(data.title);
+
+    if (exists) {
+      return sendError(reply, { message: "Property with that title already exists", statusCode: 409 });
+    }
+
     const normalized = normalizeListingPayload(data);
-    console.log(normalized)
+
+    if (!normalized.pricing) {
+      return sendError(reply, {
+        message: "pricing is required (amount OR min+max)",
+        statusCode: 400,
+      });
+    }
 
     const created = await createNewListing(normalized);
 
@@ -74,6 +63,7 @@ export const getAllListings = async (
 ) => {
   try {
     const data = await listListings(request.query as any);
+    console.log(data)
     return sendSuccess(reply, { data });
   } catch (err) {
     request.log.error({ err }, "Failed to fetch listings");
@@ -117,6 +107,75 @@ export const getListingById = async (
   }
 };
 
+export const getListingByTitle = async (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
+  try {
+    const { title } = request.params as any;
+
+    const decodedTitle =
+      typeof title === "string" ? decodeURIComponent(title).trim() : "";
+
+    if (!decodedTitle) {
+      return sendError(reply, {
+        statusCode: 400,
+        message: "Listing title is required",
+      });
+    }
+
+    const listing = await getListingByTitleService(decodedTitle);
+
+    if (!listing) {
+      return sendError(reply, {
+        statusCode: 404,
+        message: "Listing not found",
+      });
+    }
+
+    return sendSuccess(reply, { data: listing });
+  } catch (err) {
+    request.log.error({ err }, "Failed to fetch listing by title");
+    return sendError(reply, {
+      statusCode: 500,
+      message: "Failed to fetch listing",
+    });
+  }
+};
+
+export const getListingBySlug = async (
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
+  try {
+    const { slug } = request.params as any;
+
+    if (!slug) {
+      return sendError(reply, {
+        statusCode: 400,
+        message: "Listing slug is required",
+      });
+    }
+
+    const listing = await getListingBySlugService(slug);
+
+    if (!listing) {
+      return sendError(reply, {
+        statusCode: 404,
+        message: "Listing not found",
+      });
+    }
+
+    return sendSuccess(reply, { data: listing });
+  } catch (err) {
+    request.log.error({ err }, "Failed to fetch listing by slug");
+    return sendError(reply, {
+      statusCode: 500,
+      message: "Failed to fetch listing",
+    });
+  }
+};
+
 export async function updateListing(
   request: FastifyRequest,
   reply: FastifyReply
@@ -126,6 +185,13 @@ export async function updateListing(
     const payload = request.body as any;
 
     const normalized = normalizeListingPayload(payload);
+
+    if (!normalized?.pricing) {
+      return sendError(reply, {
+        statusCode: 400,
+        message: "pricing is required (amount OR min+max)",
+      });
+    }
 
     const updated = await updateListingById(id, normalized);
 

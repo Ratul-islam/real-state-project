@@ -178,7 +178,7 @@ export default function ListingMap1({
                 {selected.item?.priceNumber != null
                   ? formatMoney(selected.item.priceNumber, selected.item?.currency ?? "USD")
                   : selected.item?.price ?? ""}
-                {selected.item?.forRent ? " / mo" : ""}
+                {selected.item?.forRent ? " / modjhdfj" : ""}
               </div>
 
               <div style={{ fontSize: 12, marginTop: 4, opacity: 0.8 }}>
@@ -247,7 +247,7 @@ export default function ListingMap1({
             <div style={{ display: "flex", gap: 8 }}>
               <Link
                 className="ud-btn btn-thm"
-                href={`/single-v1/${selected.item?._id ?? selected.item?.id}`}
+                href={`/single/${selected.item?.slug ?? selected.item?.slug}`}
               >
                 View details
               </Link>

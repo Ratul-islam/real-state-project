@@ -1,5 +1,8 @@
-import { login, logout, renewToken, requestPasswordReset, resetPassword, signup, verifyPasswordResetOtp, } from "./auth.controller.js";
-export default async function authRoutes(app) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = authRoutes;
+const auth_controller_js_1 = require("./auth.controller.js");
+async function authRoutes(app) {
     app.post("/signup", {
         schema: {
             body: {
@@ -13,7 +16,7 @@ export default async function authRoutes(app) {
             },
         },
     }, async (request, reply) => {
-        await signup(request, reply, app);
+        await (0, auth_controller_js_1.signup)(request, reply, app);
     });
     app.post("/login", {
         schema: {
@@ -27,7 +30,7 @@ export default async function authRoutes(app) {
             },
         },
     }, async (request, reply) => {
-        await login(request, reply, app);
+        await (0, auth_controller_js_1.login)(request, reply, app);
     });
     app.post("/refresh", {
         schema: {
@@ -40,7 +43,7 @@ export default async function authRoutes(app) {
             },
         },
     }, async (request, reply) => {
-        await renewToken(request, reply, app);
+        await (0, auth_controller_js_1.renewToken)(request, reply, app);
     });
     app.post("/password-reset/request", {
         schema: {
@@ -53,7 +56,7 @@ export default async function authRoutes(app) {
             },
         },
     }, async (request, reply) => {
-        await requestPasswordReset(request, reply, app);
+        await (0, auth_controller_js_1.requestPasswordReset)(request, reply, app);
     });
     app.post("/password-reset/verify-otp", {
         schema: {
@@ -67,7 +70,7 @@ export default async function authRoutes(app) {
             },
         },
     }, async (request, reply) => {
-        await verifyPasswordResetOtp(request, reply, app);
+        await (0, auth_controller_js_1.verifyPasswordResetOtp)(request, reply, app);
     });
     app.post("/password-reset/confirm", {
         schema: {
@@ -81,11 +84,11 @@ export default async function authRoutes(app) {
             },
         },
     }, async (request, reply) => {
-        await resetPassword(request, reply, app);
+        await (0, auth_controller_js_1.resetPassword)(request, reply, app);
     });
     app.post("/logout", {
         schema: {},
     }, async (request, reply) => {
-        await logout(request, reply);
+        await (0, auth_controller_js_1.logout)(request, reply);
     });
 }

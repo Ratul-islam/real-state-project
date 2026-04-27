@@ -1,6 +1,5 @@
 import { api } from "@/lib/axios/client";
 
-/* ---------------- Uploads ---------------- */
 
 export async function uploadImages(files) {
   const form = new FormData();
@@ -52,5 +51,10 @@ export async function getListings(query = {}) {
 export async function getListingById(id) {
   if (!id) throw new Error("Listing id is required");
   const res = await api.get(`/listings/${id}`);
+  return res.data;
+}
+export async function getListingBySlug(slug) {
+  if (!slug) throw new Error("Listing slug is required");
+  const res = await api.get(`/listings/slug/${slug}`);
   return res.data;
 }

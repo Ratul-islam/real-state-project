@@ -13,24 +13,35 @@ const SidebarDashboard = () => {
     {
       title: "MAIN",
       items: [
-        { href: "/dashboard-home", icon: "flaticon-discovery", text: "Dashboard" },
+        // Changed to a pie chart / dashboard gauge icon
+        { href: "/dashboard-home", icon: "fal fa-chart-pie", text: "Dashboard" },
       ],
     },
     {
       title: "MANAGE LISTINGS",
       items: [
-        { href: "/dashboard-add-property", icon: "flaticon-new-tab", text: "Add New Property" },
-        { href: "/dashboard-my-properties", icon: "flaticon-home", text: "My Properties" },
-        // { href: "/dashboard-my-favourites", icon: "flaticon-like", text: "My Favorites" },
-        // { href: "/dashboard-reviews", icon: "flaticon-review", text: "Reviews" },
+        // Changed to a building with a plus sign / layer add
+        { href: "/dashboard-add-property", icon: "fal fa-layer-plus", text: "Add New Property" },
+        
+        // Changed to a building/home list icon
+        { href: "/dashboard-my-properties", icon: "fal fa-building", text: "My Properties" },
+        
+        // { href: "/dashboard-my-favourites", icon: "fal fa-heart", text: "My Favorites" },
+        // { href: "/dashboard-reviews", icon: "fal fa-star", text: "Reviews" },
+        
+        // Changed to a professional user/agent icon
+        { href: "/agents", icon: "fal fa-user-tie", text: "Agents" },
+        
+        // Changed to an envelope/messages icon for inquiries
+        { href: "/inquiries", icon: "fal fa-envelope-open-text", text: "Inquiry requests" },
       ],
     },
     // {
     //   title: "MANAGE ACCOUNT",
     //   items: [
-    //     { href: "/dashboard-my-package", icon: "flaticon-protection", text: "My Package" },
-    //     { href: "/dashboard-my-profile", icon: "flaticon-user", text: "My Profile" },
-    //     // { href: "/login", icon: "flaticon-logout", text: "Logout" },
+    //     { href: "/dashboard-my-package", icon: "fal fa-box-open", text: "My Package" },
+    //     { href: "/dashboard-my-profile", icon: "fal fa-user-circle", text: "My Profile" },
+    //     // { href: "/login", icon: "fal fa-sign-out-alt", text: "Logout" },
     //   ],
     // },
   ];

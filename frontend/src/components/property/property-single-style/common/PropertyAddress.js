@@ -1,23 +1,26 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { GoogleMap, useLoadScript } from "@react-google-maps/api";
+import { GoogleMap, useLoadScript, MarkerF } from "@react-google-maps/api";
 
 const isGood = (v) => Number.isFinite(Number(v));
 
 function getLatLng(property) {
-  if (isGood(property?.lat) && isGood(property?.lng)) {
-    const lat = Number(property.lat);
-    const lng = Number(property.lng);
-    if (!(lat === 0 && lng === 0)) return { lat, lng };
-  }
-
+  // prefer geo (new backend normalization sets geo)
   const coords = Array.isArray(property?.geo?.coordinates)
     ? property.geo.coordinates
     : null;
+
   if (coords?.length >= 2 && isGood(coords[0]) && isGood(coords[1])) {
     const lng = Number(coords[0]);
     const lat = Number(coords[1]);
+    if (!(lat === 0 && lng === 0)) return { lat, lng };
+  }
+
+  // fallback if lat/lng are still present in response
+  if (isGood(property?.lat) && isGood(property?.lng)) {
+    const lat = Number(property.lat);
+    const lng = Number(property.lng);
     if (!(lat === 0 && lng === 0)) return { lat, lng };
   }
 
@@ -41,7 +44,11 @@ const mapOptions = {
     { featureType: "transit", stylers: [{ visibility: "off" }] },
     { featureType: "road", elementType: "geometry", stylers: [{ lightness: 35 }] },
     { featureType: "water", elementType: "geometry", stylers: [{ lightness: 10 }] },
-    { featureType: "administrative", elementType: "labels.text.fill", stylers: [{ lightness: 20 }] },
+    {
+      featureType: "administrative",
+      elementType: "labels.text.fill",
+      stylers: [{ lightness: 20 }],
+    },
   ],
 };
 
@@ -53,45 +60,50 @@ const Field = ({ label, value }) => (
 );
 
 const PropertyAddress = ({ property }) => {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    googleMapsApiKey: apiKey,
   });
 
   const latLng = useMemo(() => getLatLng(property), [property]);
 
-  const addressLine = property?.locationText || property?.location || "";
+  // ✅ updated schema fields
+  const addressLine = property?.locationText || "";
   const city = property?.city || "";
-  const state = property?.state || property?.stateCounty || "";
-  const zip = property?.zip || property?.postalCode || "";
-  const area = property?.area || property?.neighborhood || "";
-  const country = property?.country || "";
+  const thana = property?.thana || "";
+  const neighborhood = property?.neighborhood || "";
+  const zip = property?.zip || "";
 
   const mapsQuery = latLng
     ? `${latLng.lat},${latLng.lng}`
-    : [addressLine, city, state, zip, country].filter(Boolean).join(", ");
+    : [addressLine, neighborhood, thana, city, zip].filter(Boolean).join(", ");
 
   const openMapsUrl = mapsQuery
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`
     : "#";
 
+  const fallbackCenter = { lat: 23.78000285364817, lng: 90.37149088261403 };
+  const center = latLng || fallbackCenter;
+
   return (
     <>
-      {/* Top info grid (like screenshot) */}
+      {/* Top info grid */}
       <div className="col-12">
         <div className="row g-3">
           <div className="col-md-6">
             <div className="d-grid gap-2">
               <Field label="Address" value={addressLine} />
               <Field label="City" value={city} />
-              <Field label="State/county" value={state} />
+              <Field label="Thana" value={thana} />
             </div>
           </div>
 
           <div className="col-md-6">
             <div className="d-grid gap-2">
-              <Field label="Zip/Postal Code" value={zip} />
-              <Field label="Area" value={area} />
-              <Field label="Country" value={country} />
+              <Field label="Neighborhood" value={neighborhood} />
+              <Field label="Zip" value={zip} />
+              <Field label="Coordinates" value={latLng ? `${center.lat}, ${center.lng}` : ""} />
             </div>
           </div>
         </div>
@@ -102,7 +114,7 @@ const PropertyAddress = ({ property }) => {
         <div
           style={{
             marginTop: 22,
-            background: "#dcebf7", 
+            background: "#dcebf7",
             borderRadius: 12,
             padding: 14,
           }}
@@ -136,12 +148,11 @@ const PropertyAddress = ({ property }) => {
               </span>
             </a>
 
-            {/* Center marker button (like screenshot) */}
+            {/* Center marker button */}
             <button
               type="button"
               aria-label="Center marker"
               onClick={() => {
-                // optional: no-op or you can open maps
                 window.open(openMapsUrl, "_blank", "noopener,noreferrer");
               }}
               style={{
@@ -160,7 +171,6 @@ const PropertyAddress = ({ property }) => {
                 placeItems: "center",
               }}
             >
-              {/* simple “pin” icon */}
               <div
                 style={{
                   width: 28,
@@ -182,9 +192,9 @@ const PropertyAddress = ({ property }) => {
               </div>
             </button>
 
-            {/* Map itself */}
+            {/* Map */}
             <div style={mapContainerStyle}>
-              {!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
+              {!apiKey ? (
                 <div
                   style={{
                     width: "100%",
@@ -217,10 +227,13 @@ const PropertyAddress = ({ property }) => {
               ) : (
                 <GoogleMap
                   mapContainerStyle={{ width: "100%", height: "100%" }}
-                  center={latLng || { lat: 23.78000285364817, lng: 90.37149088261403 }}
-                  zoom={14}
+                  center={center}
+                  zoom={latLng ? 15 : 12}
                   options={mapOptions}
-                />
+                >
+                  {/* ✅ actual marker so the location is obvious */}
+                  {latLng ? <MarkerF position={latLng} /> : null}
+                </GoogleMap>
               )}
             </div>
           </div>

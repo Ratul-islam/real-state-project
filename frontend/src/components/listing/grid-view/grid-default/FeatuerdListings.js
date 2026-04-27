@@ -27,14 +27,19 @@ const FeaturedListings = ({data,colstyle}) => {
                   </div>
                 )}
               </div>
-
+                {
+                  listing.pricing.amount? 
               <div className="list-price">
-                {listing.price} / <span>mo</span>
+                ৳{listing.pricing.amount} / <span>mo</span>
+              </div>:
+              <div className="list-price">
+                ৳{listing.pricing.min} - ৳{listing.pricing.max} / <span>mo</span>
               </div>
+                }
             </div>
             <div className="list-content">
               <h6 className="list-title">
-                <Link  href={`/single/${listing.id}`}>{listing.title}</Link>
+                <Link  href={`/single/${listing.slug}`}>{listing.title}</Link>
               </h6>
               <p className="list-text">{listing.location}</p>
               <div className="list-meta d-flex align-items-center">
@@ -52,14 +57,8 @@ const FeaturedListings = ({data,colstyle}) => {
               <div className="list-meta2 d-flex justify-content-between align-items-center">
                 <span className="for-what">For Rent</span>
                 <div className="icons d-flex align-items-center">
-                  <a href="#">
+                  <a href={"single/"+listing.slug} target="_blank">
                     <span className="flaticon-fullscreen" />
-                  </a>
-                  <a href="#">
-                    <span className="flaticon-new-tab" />
-                  </a>
-                  <a href="#">
-                    <span className="flaticon-like" />
                   </a>
                 </div>
               </div>

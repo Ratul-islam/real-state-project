@@ -228,6 +228,7 @@ const PropertyDataTable = ({ items = [], loading = false }) => {
             rows.map((property) => {
               const id = property._id || property.id;
               const title = property.title || "Untitled";
+              const slug = property.slug;
               const location = property.locationText || property.city || "-";
               const price = formatPrice(
                 property.price,
@@ -255,7 +256,7 @@ const PropertyDataTable = ({ items = [], loading = false }) => {
 
                       <div className="list-content py-0 p-0 mt-2 mt-xxl-0 ps-xxl-4">
                         <div className="h6 list-title">
-                          <Link href={`/single/${id}`}>{title}</Link>
+                          <Link href={`/single/${slug}`}>{title}</Link>
                         </div>
                         <p className="list-text mb-0">{location}</p>
                         <div className="list-price">{price}</div>
@@ -270,7 +271,7 @@ const PropertyDataTable = ({ items = [], loading = false }) => {
                   </td>
 
                   <td className="vam">
-                    <Link href={`/single/${id}`}>View</Link>
+                    <Link href={`/single/${slug}`}>View</Link>
                   </td>
 
                   <td className="vam">

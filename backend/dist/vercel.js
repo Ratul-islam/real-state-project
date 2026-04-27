@@ -1,13 +1,16 @@
-import { buildApp } from "./application.js";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = handler;
+const application_js_1 = require("./application.js");
 let appPromise = null;
 async function getApp() {
     if (!appPromise)
-        appPromise = buildApp();
+        appPromise = (0, application_js_1.buildApp)();
     const app = await appPromise;
     await app.ready();
     return app;
 }
-export default async function handler(req, res) {
+async function handler(req, res) {
     const app = await getApp();
     app.server.emit("request", req, res);
 }

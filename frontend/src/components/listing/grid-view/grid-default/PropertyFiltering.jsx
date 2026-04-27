@@ -6,21 +6,13 @@ import TopFilterBar from "./TopFilterBar";
 import FeaturedListings from "./FeatuerdListings";
 import PaginationTwo from "../../PaginationTwo";
 
-/**
- * Normalize backend listings into the shape your UI/filtering expects.
- * Your old template expects:
- *  - bed, bath (not beds/baths)
- *  - location (not locationText)
- *  - price as "$12,000" string (not number)
- *  - features array
- */
+
 function normalizeListing(raw) {
   const id = raw?._id || raw?.id;
 
   const priceNum = Number(raw?.price ?? 0);
   const currency = raw?.currency || "USD";
 
-  // format number -> "$12,000"
   const priceStr = (() => {
     try {
       return new Intl.NumberFormat(undefined, {
@@ -29,14 +21,13 @@ function normalizeListing(raw) {
         maximumFractionDigits: 0,
       }).format(priceNum);
     } catch {
-      return `$${priceNum}`;
+      return `৳${priceNum}`;
     }
   })();
 
   return {
     ...raw,
     id,
-    // template expects these names:
     bed: Number(raw?.beds ?? raw?.bed ?? 0),
     bath: Number(raw?.baths ?? raw?.bath ?? 0),
     location: raw?.locationText ?? raw?.location ?? raw?.city ?? "",
@@ -51,7 +42,6 @@ function normalizeListing(raw) {
 }
 
 export default function PropertyFiltering({ items = [] }) {
-  // ✅ incoming api listings normalized once
   const listings = useMemo(() => {
     const arr = Array.isArray(items) ? items : [];
     return arr.map(normalizeListing);
@@ -67,7 +57,6 @@ export default function PropertyFiltering({ items = [] }) {
   const [pageItems, setPageItems] = useState([]);
   const [pageContentTrac, setPageContentTrac] = useState([]);
 
-  // Buy-only page: keep only Buy filtering enabled by default.
   const listingStatus = "Buy";
 
   const [propertyTypes, setPropertyTypes] = useState([]);
@@ -105,7 +94,6 @@ export default function PropertyFiltering({ items = [] }) {
     });
   };
 
-  // Buy-only: no-op handler retained for sidebar compatibility.
   const handlelistingStatus = () => {};
 
   const handlepropertyTypes = (elm) => {

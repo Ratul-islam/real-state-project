@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import '@/lib/axios/interceptors'
 import "@/styles/utilities.scss";
 import "leaflet/dist/leaflet.css";
+import GoogleTranslate from "@/components/translate/googleTranslate";
 
 
 
@@ -45,10 +46,13 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en">
+
       <body
         className={`body  ${poppins.variable} ${dmSans.variable}`}
         cz-shortcut-listen="false"
       >
+        {/* <TranslateBannerKiller /> */}
+        <GoogleTranslate />
         <div className="wrapper ovh">{children}</div>
 
         <ScrollToTop />

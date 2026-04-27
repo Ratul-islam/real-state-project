@@ -1,3 +1,6 @@
+import { Types } from "mongoose";
+import { IAgent } from "../agents/agents.types";
+
 export type VideoProvider =
   | "youtube"
   | "facebook"
@@ -5,49 +8,79 @@ export type VideoProvider =
   | "tiktok"
   | "custom";
 
+export type ListingAssetType = "image" | "pdf";
+
+export type Pricing =
+  | {
+      amount: number;
+      currency?: string;
+      min?: never;
+      max?: never;
+    }
+  | {
+      min: number;
+      max: number;
+      currency?: string;
+      amount?: never;
+    };
+
+export interface IListingAsset {
+  type: ListingAssetType;   
+  url: string;
+  alt?: string;             
+  pages?: number;           
+  order?: number;
+}
+
 export interface IListingImage {
-  url: String;
-  alt?: String;
+  url: string;
+  alt?: string;
   order?: number;
 }
 
 export interface IListingVideo {
   provider: VideoProvider;
-  url: String;
-  embedId?: String;
+  url: string;
+  embedId?: string;
 }
 
 export interface IListingMedia {
   cover: IListingImage;
   gallery: IListingImage[];
   video?: IListingVideo;
-  virtualTourUrl?: String;
+  virtualTourUrl?: string;
 }
 
 export interface IListingFloorPlan {
-  title: String;
+  title: string;
   sizeSqft: number;
   bedrooms: number;
   bathrooms: number;
-  price: number;
-  currency?: String;
-  image: IListingImage;
-  description?: String;
+
+  pricing: Pricing;
+
+  image: IListingAsset;
+
+  description?: string;
   order?: number;
 }
 
 export interface IListing {
-  title: String;
-  description: String;
+  title: string;
+  description: string;
   media: IListingMedia;
-  zip: String;
-  city: String;
-  locationText: String;
-  thana: String;
-  neighborhood: String;
+  slug: String;
+
+  zip: string;
+  city: string;
+  locationText: string;
+  thana: string;
+  neighborhood: string;
+
   beds: number;
   baths: number;
   sqft: number;
+
   propertyStatus:
     | "Pending"
     | "Active"
@@ -55,29 +88,44 @@ export interface IListing {
     | "Rented"
     | "Draft"
     | "Archived";
-  price: number;
-  currency: String;
-  lotSize: String;
-  rooms: Number;
+
+  pricing: Pricing;
+
+  lotSize: string;
+  rooms: number;
+
   forRent: boolean;
   featured: boolean;
-  customId: String;
-  garages: Number;
-  garageSize: String;
-  availableFrom: Date;
-  basement: String;
-  extraDetails: String;
-  roofing: String;
-  exteriorMaterial: String;
-  ownerNotes: String;
-  businessType: "housing society" | "housing construction" | "home solution";
 
-  propertyType: "Houses" | "Apartments" | "Villa" | "Office";
+  customId: string;
+
+  garages: number;
+  garageSize: string;
+
+  availableFrom: Date;
+
+  basement: string;
+  extraDetails: string;
+  roofing: string;
+  exteriorMaterial: string;
+  ownerNotes: string;
+
+  businessType:
+    | "housing society"
+    | "housing construction"
+    | "home solution";
+
+  propertyType:
+    | "Houses"
+    | "Apartments"
+    | "Villa"
+    | "Office"
+    | "Land Sharing";
 
   yearBuilding: number;
 
-  tags: String[];
-  features: String[];
+  tags: string[];
+  features: string[];
 
   floorPlans: IListingFloorPlan[];
 
@@ -85,98 +133,133 @@ export interface IListing {
     type: "Point";
     coordinates: [number, number];
   };
+  
+  agent?: Types.ObjectId | string | IAgent;
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-
 export type CreateListingInput = {
-  title: String;
+  title: string;
 
-  description?: String;
+  description?: string;
 
   media: {
-    cover: { url: String; alt?: String; order?: number };
-    gallery?: { url: String; alt?: String; order?: number }[];
-    video?: { provider: VideoProvider; url: String; embedId?: String } | null;
-    virtualTourUrl?: String;
+    cover: { url: string; alt?: string; order?: number };
+    gallery?: { url: string; alt?: string; order?: number }[];
+    video?: {
+      provider: VideoProvider;
+      url: string;
+      embedId?: string;
+    } | null;
+    virtualTourUrl?: string;
   };
 
-  city: String;
-  locationText: String;
+  city: string;
+  locationText: string;
 
-  zip?: String;
-  thana?: String;
-  neighborhood?: String;
+  zip?: string;
+  thana?: string;
+  neighborhood?: string;
 
   beds: number;
   baths: number;
   sqft: number;
 
-  price: number;
-  currency?: String;
+  pricing: Pricing;
 
   forRent: boolean;
   featured?: boolean;
 
-  businessType: "housing society" | "housing construction" | "home solution";
+  businessType:
+    | "housing society"
+    | "housing construction"
+    | "home solution";
 
-  propertyType: "Houses" | "Apartments" | "Villa" | "Office";
+  propertyType:
+    | "Houses"
+    | "Apartments"
+    | "Villa"
+    | "Office"
+    | "Land Sharing";
 
   yearBuilding: number;
 
-  propertyStatus?: "Pending" | "Active" | "Sold" | "Rented" | "Draft" | "Archived";
+  propertyStatus?:
+    | "Pending"
+    | "Active"
+    | "Sold"
+    | "Rented"
+    | "Draft"
+    | "Archived";
 
-  tags?: String[];
-  features?: String[];
+  tags?: string[];
+  features?: string[];
 
   floorPlans?: IListingFloorPlan[];
 
-  lotSize?: String;
+  lotSize?: string;
   rooms?: number;
-  customId?: String;
+  customId?: string;
   garages?: number;
-  garageSize?: String;
-  availableFrom?: String | Date;
-  basement?: String;
-  extraDetails?: String;
-  roofing?: String;
-  exteriorMaterial?: String;
-  ownerNotes?: String;
+  garageSize?: string;
+  availableFrom?: string | Date;
+  basement?: string;
+  extraDetails?: string;
+  roofing?: string;
+  exteriorMaterial?: string;
+  ownerNotes?: string;
 
   lat: number;
   lng: number;
+
+  agent?: string;
 };
+
 export type ListingsQuery = {
-  city?: String;
+  city?: string;
 
-  forRent?: String;
-  featured?: String;
+  forRent?: string;
+  featured?: string;
 
-  propertyType?: "Houses" | "Apartments" | "Villa" | "Office";
-  businessType?: "housing society" | "housing construction" | "home solution";
+  propertyType?:
+    | "Houses"
+    | "Apartments"
+    | "Villa"
+    | "Office"
+    | "Land Sharing";
 
-  search?: String;
-  q?: String;
+  businessType?:
+    | "housing society"
+    | "housing construction"
+    | "home solution";
 
-  propertyId?: String;
+  search?: string;
+  q?: string;
 
-  minPrice?: String;
-  maxPrice?: String;
+  propertyId?: string;
 
-  minBeds?: String;
-  minBaths?: String;
+  minPrice?: string;
+  maxPrice?: string;
 
-  minSqft?: String;
-  maxSqft?: String;
+  minBeds?: string;
+  minBaths?: string;
 
-  tags?: String;
-  features?: String;
+  minSqft?: string;
+  maxSqft?: string;
 
-  hasVideo?: String;
-  hasVirtualTour?: String;
+  tags?: string;
+  features?: string;
 
-  page?: String;
-  limit?: String;
+  hasVideo?: string;
+  hasVirtualTour?: string;
+
+  page?: string;
+  limit?: string;
 
   sort?: "price" | "sqft" | "yearBuilding" | "createdAt";
   order?: "asc" | "desc";
+
+  agent?: string;
 };

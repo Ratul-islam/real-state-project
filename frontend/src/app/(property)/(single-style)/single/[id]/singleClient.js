@@ -19,34 +19,30 @@ import PropertyGallery from "@/components/property/property-single-style/single-
 import PropertyHeader from "@/components/property/property-single-style/single-v2/PropertyHeader";
 import ScheduleForm from "@/components/property/property-single-style/single-v2/ScheduleForm";
 
-import { getListingById } from "@/services/listing/listings.service";
+import { getListingById, getListingBySlug } from "@/services/listing/listings.service";
 import { trackListingEvent } from "@/services/analytics/analytics.service";
 
-const LoaderBlock = () => {
-  return (
-    <section className="pt60 pb90 bgc-f7">
-      <div className="container">
-        <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-          <h4 className="title fz17 mb10">Loading property...</h4>
-          <p className="text mb0">Please wait a moment.</p>
-        </div>
+const LoaderBlock = () => (
+  <section className="pt60 pb90 bgc-f7">
+    <div className="container">
+      <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+        <h4 className="title fz17 mb10">Loading property...</h4>
+        <p className="text mb0">Please wait a moment.</p>
       </div>
-    </section>
-  );
-};
+    </div>
+  </section>
+);
 
-const ErrorBlock = ({ message }) => {
-  return (
-    <section className="pt60 pb90 bgc-f7">
-      <div className="container">
-        <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-          <h4 className="title fz17 mb10">Could not load property</h4>
-          <p className="text mb0">{message || "Something went wrong."}</p>
-        </div>
+const ErrorBlock = ({ message }) => (
+  <section className="pt60 pb90 bgc-f7">
+    <div className="container">
+      <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
+        <h4 className="title fz17 mb10">Could not load property</h4>
+        <p className="text mb0">{message || "Something went wrong."}</p>
       </div>
-    </section>
-  );
-};
+    </div>
+  </section>
+);
 
 const VISITOR_KEY = "visitor_id_v1";
 
@@ -69,13 +65,22 @@ function getOrCreateVisitorId() {
   }
 }
 
+const isObjectIdLike = (v) => /^[a-f\d]{24}$/i.test(String(v || "").trim());
+
+const decodeSlugToTitle = (slugOrTitle) => {
+  const s = String(slugOrTitle || "").trim();
+  if (!s) return "";
+  try {
+    return decodeURIComponent(s).replace(/\+/g, " ").trim();
+  } catch {
+    return s.replace(/\+/g, " ").trim();
+  }
+};
+
 const singleClient = ({ id }) => {
   const [loading, setLoading] = useState(true);
   const [property, setProperty] = useState(null);
   const [error, setError] = useState("");
-
-  const onNewTabClick = () =>
-    track("share_click", { channel: "ui_button", action: "new_tab" });
 
   const visitorIdRef = useRef(null);
   const trackedPageViewRef = useRef(false);
@@ -87,7 +92,7 @@ const singleClient = ({ id }) => {
   const track = useCallback(
     async (type, extra = {}) => {
       try {
-        const listingId = String(id || property?._id || property?.id || "");
+        const listingId = String(property?._id || property?.id || "");
         const visitorId = String(visitorIdRef.current || "");
 
         if (!listingId) return;
@@ -103,8 +108,11 @@ const singleClient = ({ id }) => {
         });
       } catch (e) {}
     },
-    [id, property],
+    [property]
   );
+
+  const onNewTabClick = () =>
+    track("share_click", { channel: "ui_button", action: "new_tab" });
 
   useEffect(() => {
     let alive = true;
@@ -112,9 +120,16 @@ const singleClient = ({ id }) => {
     const run = async () => {
       setLoading(true);
       setError("");
+      trackedPageViewRef.current = false;
 
       try {
-        const res = await getListingById(id);
+        const raw = String(id || "").trim();
+        if (!raw) throw new Error("Missing property identifier.");
+
+        const res = isObjectIdLike(raw)
+          ? await getListingById(raw)
+          : await getListingBySlug(decodeSlugToTitle(raw));
+
         const listing = res?.data ?? res;
 
         if (!listing?._id && !listing?.id) {
@@ -127,7 +142,7 @@ const singleClient = ({ id }) => {
           setError(
             e?.response?.data?.message ||
               e?.message ||
-              "Failed to load property.",
+              "Failed to load property."
           );
         }
       } finally {
@@ -158,11 +173,7 @@ const singleClient = ({ id }) => {
   }, [loading, error, property, track]);
 
   const onContactClick = () => track("contact_click");
-  const onShareClick = () =>
-    track("share_click", {
-      channel: "ui_button",
-    });
-  const onSaveClick = () => track("save_click");
+  const onShareClick = () => track("share_click", { channel: "ui_button" });
 
   return (
     <>
@@ -179,7 +190,7 @@ const singleClient = ({ id }) => {
             <div className="container">
               <div className="row">
                 <PropertyHeader
-                  id={id}
+                  id={property?._id || property?.id}
                   property={property}
                   onShareClick={onShareClick}
                   onNewTabClick={onNewTabClick}
@@ -187,16 +198,18 @@ const singleClient = ({ id }) => {
               </div>
 
               <div className="row mb30 mt30">
-                <PropertyGallery id={id} property={property} />
+                <PropertyGallery
+                  id={property?._id || property?.id}
+                  property={property}
+                />
               </div>
 
               <div className="row mt30">
-                <OverView id={id} property={property} />
+                <OverView id={property?._id || property?.id} property={property} />
               </div>
             </div>
           </section>
 
-          {/* Main content */}
           <section className="pt60 pb90 bgc-f7">
             <div className="container">
               <div className="row wrap">
@@ -219,9 +232,7 @@ const singleClient = ({ id }) => {
                   </div>
 
                   <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30 overflow-hidden position-relative">
-                    <h4 className="title fz17 mb30">
-                      Features &amp; Amenities
-                    </h4>
+                    <h4 className="title fz17 mb30">Features &amp; Amenities</h4>
                     <div className="row">
                       <PropertyFeaturesAminites property={property} />
                     </div>
@@ -238,24 +249,32 @@ const singleClient = ({ id }) => {
                     </div>
                   </div>
 
-                  <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30">
-                    <h4 className="title fz17 mb30">Video</h4>
-                    <div className="row">
-                      <PropertyVideo property={property} />
+                  {property?.media?.video?.url && (
+                    <div className="ps-widget bgc-white bdrs12 default-box-shadow2 p30 mb30">
+                      <h4 className="title fz17 mb30">Video</h4>
+                      <div className="row">
+                        <PropertyVideo property={property} />
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
+                {/* Sidebar - Contact Agent */}
                 <div className="col-lg-4">
                   <div className="column">
                     <div className="default-box-shadow1 bdrs12 bdr1 p30 mb30-md bgc-white position-relative">
-                      <h6 className="title fz17 mb30">Get More Information</h6>
+                      <h6 className="title fz17 mb30">
+                        {property?.agent ? "Contact Agent" : "Get More Information"}
+                      </h6>
                       <ContactWithAgent
                         property={property}
+                        agent={property?.agent} 
                         onContactClick={onContactClick}
                       />
+                      
                       <ScheduleForm
                         property={property}
+                        agent={property?.agent}
                         onContactClick={onContactClick}
                       />
                     </div>
@@ -263,14 +282,12 @@ const singleClient = ({ id }) => {
                 </div>
               </div>
 
-              {/* Featured listings (unchanged) */}
+              {/* Featured Listings Carousel (Unchanged) */}
               <div className="row mt30 align-items-center justify-content-between">
                 <div className="col-auto">
                   <div className="main-title">
                     <h2 className="title">Discover Our Featured Listings</h2>
-                    <p className="paragraph">
-                      Aliquam lacinia diam quis lacus euismod
-                    </p>
+                    {/* <p className="paragraph">Aliquam lacinia diam quis lacus euismod</p> */}
                   </div>
                 </div>
 

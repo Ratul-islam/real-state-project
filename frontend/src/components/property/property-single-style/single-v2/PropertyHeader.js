@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 
 const formatPrice = (price, currency = "USD") => {
   const n = Number(price);
+
   if (!Number.isFinite(n)) return "—";
   try {
     return new Intl.NumberFormat("en-US", {
@@ -12,7 +13,7 @@ const formatPrice = (price, currency = "USD") => {
       maximumFractionDigits: 0,
     }).format(n);
   } catch {
-    return `$${n.toLocaleString("en-US")}`;
+    return `৳${n.toLocaleString("en-US")}`;
   }
 };
 
@@ -81,13 +82,6 @@ const PropertyHeader = ({ id, property, onShareClick, onNewTabClick }) => {
       : "—";
 
   const built = property?.yearBuilt ?? property?.yearBuilding ?? null;
-
-  const priceText = formatPrice(property?.price, property?.currency);
-  const perSqft = useMemo(
-    () => dollarsPerSqft(property?.price, property?.sqft),
-    [property?.price, property?.sqft]
-  );
-
   const displayId = property?._id || property?.id || id || "—";
 
   const listingId = String(property?._id || property?.id || id || "");
@@ -96,6 +90,61 @@ const PropertyHeader = ({ id, property, onShareClick, onNewTabClick }) => {
     typeof window !== "undefined"
       ? `${window.location.origin}${listingPath}`
       : listingPath;
+
+  // --- Pricing Logic Start ---
+  const pricing = property?.pricing || {};
+  const currency = pricing.currency || property?.currency || "USD";
+
+  const priceText = useMemo(() => {
+    if (pricing.amount != null) {
+      return formatPrice(pricing.amount, currency);
+    }
+    if (pricing.min != null && pricing.max != null) {
+      if (pricing.min === pricing.max) {
+        return formatPrice(pricing.min, currency);
+      }
+      return `${formatPrice(pricing.min, currency)} - ${formatPrice(pricing.max, currency)}`;
+    }
+    if (pricing.min != null) return formatPrice(pricing.min, currency);
+    if (pricing.max != null) return formatPrice(pricing.max, currency);
+    return "—";
+  }, [pricing, currency]);
+
+  const perSqftText = useMemo(() => {
+    const sqft = Number(property?.sqft);
+    
+    // 1. MUST have valid sqft to calculate. If 0 or missing, hide the text completely.
+    if (!Number.isFinite(sqft) || sqft <= 0) return null;
+
+    const calc = (val) => dollarsPerSqft(val, sqft);
+
+    // 2. Handle flat amount
+    if (pricing.amount != null) {
+      const res = calc(pricing.amount);
+      return res ? `${priceText} / ${sqft} sq ft = $${res}/sq ft` : null;
+    }
+
+    // 3. Handle min/max range
+    if (pricing.min != null && pricing.max != null) {
+      const minRes = calc(pricing.min);
+      const maxRes = calc(pricing.max);
+
+      // If min and max are different, show the full range
+      if (pricing.min !== pricing.max && minRes && maxRes) {
+         return `${priceText} / ${sqft} sq ft = ৳${minRes} - ৳${maxRes}/sq ft`;
+      }
+
+      return minRes ? `${priceText} / ${sqft} sq ft = ৳${minRes}/sq ft` : null;
+    }
+
+    if (pricing.min != null) {
+      const res = calc(pricing.min);
+      return res ? `${priceText} / ${sqft} sq ft = ৳${res}/sq ft` : null;
+    }
+
+    return null;
+  }, [pricing, property?.sqft, priceText]);
+  // --- Pricing Logic End ---
 
   const handleNewTab = (e) => {
     e.preventDefault();
@@ -113,7 +162,6 @@ const PropertyHeader = ({ id, property, onShareClick, onNewTabClick }) => {
 
     onShareClick?.({ action: "share" });
 
-    // Best UX: native share where available
     try {
       if (navigator.share) {
         await navigator.share({
@@ -121,15 +169,12 @@ const PropertyHeader = ({ id, property, onShareClick, onNewTabClick }) => {
           text: `Check out: ${title}`,
           url: shareUrl,
         });
-        // No noisy UI needed; user sees native share sheet
         return;
       }
     } catch {
-      // user may cancel; ignore
       return;
     }
 
-    // Fallback: copy link + subtle toast
     const ok = await copyToClipboard(shareUrl);
     if (ok) showToast("Link copied to clipboard", "success");
     else showToast("Could not copy link", "error");
@@ -193,7 +238,7 @@ const PropertyHeader = ({ id, property, onShareClick, onNewTabClick }) => {
               </a>
             </div>
 
-            {/* ✅ Small toast (no alert) */}
+            {/* Toast */}
             {toast.show && (
               <div
                 role="status"
@@ -217,11 +262,13 @@ const PropertyHeader = ({ id, property, onShareClick, onNewTabClick }) => {
 
             <h3 className="price mb-0">{priceText}</h3>
 
-            <p className="text space fz15">
-              {perSqft
-                ? `${priceText}/${property?.sqft} sqft = $${perSqft}/sq ft`
-                : "—/sq ft"}
-            </p>
+            {/* Conditionally render the perSqft line ONLY if we have valid data for it */}
+            {perSqftText && (
+              <p className="text space fz15">
+                {perSqftText}
+              </p>
+            )}
+
           </div>
         </div>
       </div>

@@ -6,18 +6,66 @@ import Link from "next/link";
 import { Navigation, Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
-const formatPrice = (price, currency = "USD") => {
-  const n = Number(price ?? 0);
-  if (!Number.isFinite(n)) return "—";
+const DEFAULT_CURRENCY = "BDT";
+
+const formatMoney = (n, currency = DEFAULT_CURRENCY) => {
+  const num = Number(n);
+  if (!Number.isFinite(num)) return "—";
   try {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency,
       maximumFractionDigits: 0,
-    }).format(n);
+    }).format(num);
   } catch {
-    return `$${n}`;
+    // fallback if currency code is invalid
+    return `${currency} ${Math.round(num)}`;
   }
+};
+
+const getPricingLabel = (listing) => {
+  const pr = listing?.pricing;
+
+  // fixed
+  if (pr && typeof pr.amount === "number") {
+    return formatMoney(pr.amount, pr.currency || DEFAULT_CURRENCY);
+  }
+
+  // range
+  if (pr && typeof pr.min === "number" && typeof pr.max === "number") {
+    const cur = pr.currency || DEFAULT_CURRENCY;
+    return `${formatMoney(pr.min, cur)} - ${formatMoney(pr.max, cur)}`;
+  }
+
+  // backward-compat fallback (if some old docs still have price/currency)
+  if (listing?.price !== undefined && listing?.price !== null) {
+    return formatMoney(listing.price, listing?.currency || DEFAULT_CURRENCY);
+  }
+
+  return "—";
+};
+
+const getPricingNumbers = (listing) => {
+  const pr = listing?.pricing;
+
+  if (pr && typeof pr.amount === "number") {
+    return { min: pr.amount, max: pr.amount, currency: pr.currency || DEFAULT_CURRENCY };
+  }
+
+  if (pr && typeof pr.min === "number" && typeof pr.max === "number") {
+    return { min: pr.min, max: pr.max, currency: pr.currency || DEFAULT_CURRENCY };
+  }
+
+  if (listing?.price !== undefined && listing?.price !== null) {
+    const amt = Number(listing.price);
+    return {
+      min: Number.isFinite(amt) ? amt : 0,
+      max: Number.isFinite(amt) ? amt : 0,
+      currency: listing?.currency || DEFAULT_CURRENCY,
+    };
+  }
+
+  return { min: 0, max: 0, currency: DEFAULT_CURRENCY };
 };
 
 const getCoverUrl = (listing) =>
@@ -27,7 +75,6 @@ const getCoverUrl = (listing) =>
   "/images/listings/property-detail-pic.jpg";
 
 const FeaturedListings = ({ listings = [] }) => {
-  // show latest 6 (caller should already pass recent, but safe here)
   const data = useMemo(() => {
     const arr = Array.isArray(listings) ? listings : [];
     return arr.slice(0, 6);
@@ -57,17 +104,24 @@ const FeaturedListings = ({ listings = [] }) => {
         {data.map((listing) => {
           const id = listing?._id || listing?.id;
           const title = listing?.title || "Untitled";
-          const location = listing?.locationText || listing?.location || listing?.city || "";
+          const slug = listing?.slug;
+          const location =
+            listing?.locationText || listing?.location || listing?.city || "";
+
           const beds = Number(listing?.beds ?? listing?.bed ?? 0);
           const baths = Number(listing?.baths ?? listing?.bath ?? 0);
           const sqft = Number(listing?.sqft ?? 0);
-          const price = formatPrice(listing?.price, listing?.currency || "USD");
+
+          const priceLabel = getPricingLabel(listing);
+          const prNums = getPricingNumbers(listing);
+
+          // for per-sqft: use min (if range) so it stays sane
           const perSqft =
-            Number.isFinite(Number(listing?.price)) && sqft > 0
-              ? (Number(listing.price) / sqft).toFixed(2)
+            Number.isFinite(prNums.min) && prNums.min > 0 && sqft > 0
+              ? (prNums.min / sqft).toFixed(2)
               : null;
 
-          const href = id ? `/single/${id}` : "#";
+          const href = id ? `/single/${slug}` : "#";
           const imageUrl = getCoverUrl(listing);
 
           return (
@@ -94,7 +148,7 @@ const FeaturedListings = ({ listings = [] }) => {
                     </div>
 
                     <div className="list-price">
-                      {price}
+                      {priceLabel}
                       {listing?.forRent ? (
                         <>
                           {" "}
@@ -131,14 +185,14 @@ const FeaturedListings = ({ listings = [] }) => {
                       </span>
 
                       <div className="icons d-flex align-items-center">
-                        <span title={perSqft ? `${perSqft}/sqft` : ""}>
-                          <span className="flaticon-fullscreen" />
+                        <span title={perSqft ? `${perSqft} ${prNums.currency}/sqft` : ""}>
+                          <span
+                            className="flaticon-fullscreen"
+                            style={{ marginRight: "10px" }}
+                          />
                         </span>
                         <span>
                           <span className="flaticon-new-tab" />
-                        </span>
-                        <span>
-                          <span className="flaticon-like" />
                         </span>
                       </div>
                     </div>

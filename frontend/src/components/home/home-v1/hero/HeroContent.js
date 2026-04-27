@@ -16,7 +16,7 @@ const HeroContent = () => {
     params.set("forRent", "false"); 
 
     const qs = params.toString();
-    router.push(qs ? `/map-v1?${qs}` : "/map-v1");
+    router.push(qs ? `/map?${qs}` : "/map");
   };
 
   return (

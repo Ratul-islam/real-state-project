@@ -1,9 +1,14 @@
-import { sendError, sendSuccess } from "../../utils/responses.js";
-import { trackListingEvent, getListingStats, getOverallStats } from "./analytics.service.js";
-export async function trackEventController(request, reply) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.trackEventController = trackEventController;
+exports.getListingStatsController = getListingStatsController;
+exports.getOverallStatsController = getOverallStatsController;
+const responses_js_1 = require("../../utils/responses.js");
+const analytics_service_js_1 = require("./analytics.service.js");
+async function trackEventController(request, reply) {
     try {
         const body = request.body;
-        const result = await trackListingEvent({
+        const result = await (0, analytics_service_js_1.trackListingEvent)({
             listingId: body.listingId,
             type: body.type,
             visitorId: body.visitorId,
@@ -11,35 +16,35 @@ export async function trackEventController(request, reply) {
             userAgent: body.userAgent || request.headers["user-agent"] || "",
         });
         if (!result.accepted) {
-            return sendError(reply, { statusCode: 400, message: result.reason || "Invalid payload" });
+            return (0, responses_js_1.sendError)(reply, { statusCode: 400, message: result.reason || "Invalid payload" });
         }
-        return sendSuccess(reply, { statusCode: 200, message: "tracked", data: result });
+        return (0, responses_js_1.sendSuccess)(reply, { statusCode: 200, message: "tracked", data: result });
     }
     catch (err) {
         request.log.error(err);
-        return sendError(reply, { statusCode: 500, message: "Failed to track event" });
+        return (0, responses_js_1.sendError)(reply, { statusCode: 500, message: "Failed to track event" });
     }
 }
-export async function getListingStatsController(request, reply) {
+async function getListingStatsController(request, reply) {
     try {
         const { id } = request.params;
         const { range } = request.query;
-        const data = await getListingStats(id, range || "30d");
-        return sendSuccess(reply, { statusCode: 200, message: "ok", data });
+        const data = await (0, analytics_service_js_1.getListingStats)(id, range || "30d");
+        return (0, responses_js_1.sendSuccess)(reply, { statusCode: 200, message: "ok", data });
     }
     catch (err) {
         request.log.error(err);
-        return sendError(reply, { statusCode: 400, message: err?.message || "Failed to get stats" });
+        return (0, responses_js_1.sendError)(reply, { statusCode: 400, message: err?.message || "Failed to get stats" });
     }
 }
-export async function getOverallStatsController(request, reply) {
+async function getOverallStatsController(request, reply) {
     try {
         const { range } = request.query;
-        const data = await getOverallStats(range || "30d");
-        return sendSuccess(reply, { statusCode: 200, message: "ok", data });
+        const data = await (0, analytics_service_js_1.getOverallStats)(range || "30d");
+        return (0, responses_js_1.sendSuccess)(reply, { statusCode: 200, message: "ok", data });
     }
     catch (err) {
         request.log.error(err);
-        return sendError(reply, { statusCode: 500, message: "Failed to get overall stats" });
+        return (0, responses_js_1.sendError)(reply, { statusCode: 500, message: "Failed to get overall stats" });
     }
 }

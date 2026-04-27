@@ -1,9 +1,15 @@
-import mongoose from 'mongoose';
-import 'dotenv/config';
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.connectDB = connectDB;
+const mongoose_1 = __importDefault(require("mongoose"));
+require("dotenv/config");
 const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/mydb';
-export async function connectDB() {
+async function connectDB() {
     try {
-        await mongoose.connect(MONGO_URL);
+        await mongoose_1.default.connect(MONGO_URL);
         console.log('MongoDB connected via Mongoose!');
     }
     catch (err) {

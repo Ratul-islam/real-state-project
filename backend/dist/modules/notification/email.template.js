@@ -1,4 +1,7 @@
-export const emailTemplates = {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.emailTemplates = void 0;
+exports.emailTemplates = {
     EMAIL_VERIFICATION: (otp, expiresIn) => ({
         subject: 'Verify your email',
         html: `<p>Your verification code is <b>${otp}</b>. It expires in ${expiresIn} minutes.</p>`,

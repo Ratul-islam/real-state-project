@@ -1,5 +1,8 @@
-import { Schema, model } from "mongoose";
-const adminSchema = new Schema({
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Admin = void 0;
+const mongoose_1 = require("mongoose");
+const adminSchema = new mongoose_1.Schema({
     name: { type: String, required: true, trim: true },
     email: {
         type: String,
@@ -23,4 +26,4 @@ const adminSchema = new Schema({
     isActive: { type: Boolean, default: true },
     lastLoginAt: Date,
 }, { timestamps: true });
-export const Admin = model("Admin", adminSchema);
+exports.Admin = (0, mongoose_1.model)("Admin", adminSchema);

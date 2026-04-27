@@ -18,7 +18,7 @@ const ContactWithAgent = ({ property, onContactClick }) => {
     agent?.phone || agent?.mobile || agent?.contact || FALLBACK_AGENT.phone;
 
   const avatar =
-    agent?.avatar || agent?.photo || agent?.image || FALLBACK_AGENT.avatar;
+    agent?.avatar || agent?.photoUrl || agent?.image || FALLBACK_AGENT.avatar;
 
   const handleContact = () => {
     // ✅ analytics hook (won’t crash if not provided)

@@ -1,40 +1,34 @@
-import { createNewListing, listListings, getListingById as getListingByIdService, updateListingById, deleteListingById, } from "./listing.services.js";
-import { sendError, sendSuccess } from "../../utils/responses.js";
-import { AppError } from "../../utils/AppError.js";
-function normalizeListingPayload(payload) {
-    const p = { ...(payload || {}) };
-    if (p.media) {
-        if (!Array.isArray(p.media.gallery))
-            p.media.gallery = p.media.gallery ? p.media.gallery : [];
-    }
-    const hasLat = p.lat !== undefined && p.lat !== null;
-    const hasLng = p.lng !== undefined && p.lng !== null;
-    if (hasLat && hasLng) {
-        const lat = Number(p.lat);
-        const lng = Number(p.lng);
-        if (Number.isFinite(lat) && Number.isFinite(lng)) {
-            p.geo = { type: "Point", coordinates: [lng, lat] };
-        }
-    }
-    if (p.floorPlans !== undefined) {
-        if (!Array.isArray(p.floorPlans))
-            p.floorPlans = [];
-    }
-    return p;
-}
-export const addListing = async (request, reply) => {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getListingBySlug = exports.getListingByTitle = exports.getListingById = exports.getAllListings = exports.addListing = void 0;
+exports.updateListing = updateListing;
+exports.deleteListing = deleteListing;
+const listing_services_js_1 = require("./listing.services.js");
+const responses_js_1 = require("../../utils/responses.js");
+const AppError_js_1 = require("../../utils/AppError.js");
+const listings_js_1 = require("../../utils/listings.js");
+const addListing = async (request, reply) => {
     const data = request.body;
     try {
         if (!data?.media?.cover?.url) {
-            return sendError(reply, {
+            return (0, responses_js_1.sendError)(reply, {
                 message: "media.cover.url is required",
                 statusCode: 400,
             });
         }
-        const normalized = normalizeListingPayload(data);
-        console.log(normalized);
-        const created = await createNewListing(normalized);
-        return sendSuccess(reply, {
+        const exists = await (0, listing_services_js_1.getListingByTitleService)(data.title);
+        if (exists) {
+            return (0, responses_js_1.sendError)(reply, { message: "Property with that title already exists", statusCode: 409 });
+        }
+        const normalized = (0, listings_js_1.normalizeListingPayload)(data);
+        if (!normalized.pricing) {
+            return (0, responses_js_1.sendError)(reply, {
+                message: "pricing is required (amount OR min+max)",
+                statusCode: 400,
+            });
+        }
+        const created = await (0, listing_services_js_1.createNewListing)(normalized);
+        return (0, responses_js_1.sendSuccess)(reply, {
             message: "Listing successfully added",
             statusCode: 201,
             data: created,
@@ -42,58 +36,123 @@ export const addListing = async (request, reply) => {
     }
     catch (err) {
         request.log.error({ err }, "Error adding listing");
-        return sendError(reply, {
+        return (0, responses_js_1.sendError)(reply, {
             message: "Error adding listing",
             statusCode: 500,
         });
     }
 };
-export const getAllListings = async (request, reply) => {
+exports.addListing = addListing;
+const getAllListings = async (request, reply) => {
     try {
-        const data = await listListings(request.query);
-        return sendSuccess(reply, { data });
+        const data = await (0, listing_services_js_1.listListings)(request.query);
+        console.log(data);
+        return (0, responses_js_1.sendSuccess)(reply, { data });
     }
     catch (err) {
         request.log.error({ err }, "Failed to fetch listings");
-        return sendError(reply, {
+        return (0, responses_js_1.sendError)(reply, {
             statusCode: 500,
             message: "Failed to fetch listings",
         });
     }
 };
-export const getListingById = async (request, reply) => {
+exports.getAllListings = getAllListings;
+const getListingById = async (request, reply) => {
     try {
         const { id } = request.params;
         if (!id) {
-            return sendError(reply, {
+            return (0, responses_js_1.sendError)(reply, {
                 statusCode: 400,
                 message: "Listing id is required",
             });
         }
-        const listing = await getListingByIdService(id);
+        const listing = await (0, listing_services_js_1.getListingById)(id);
         if (!listing) {
-            return sendError(reply, {
+            return (0, responses_js_1.sendError)(reply, {
                 statusCode: 404,
                 message: "Listing not found",
             });
         }
-        return sendSuccess(reply, { data: listing });
+        return (0, responses_js_1.sendSuccess)(reply, { data: listing });
     }
     catch (err) {
         request.log.error({ err }, "Failed to fetch listing by id");
-        return sendError(reply, {
+        return (0, responses_js_1.sendError)(reply, {
             statusCode: 500,
             message: "Failed to fetch listing",
         });
     }
 };
-export async function updateListing(request, reply) {
+exports.getListingById = getListingById;
+const getListingByTitle = async (request, reply) => {
+    try {
+        const { title } = request.params;
+        const decodedTitle = typeof title === "string" ? decodeURIComponent(title).trim() : "";
+        if (!decodedTitle) {
+            return (0, responses_js_1.sendError)(reply, {
+                statusCode: 400,
+                message: "Listing title is required",
+            });
+        }
+        const listing = await (0, listing_services_js_1.getListingByTitleService)(decodedTitle);
+        if (!listing) {
+            return (0, responses_js_1.sendError)(reply, {
+                statusCode: 404,
+                message: "Listing not found",
+            });
+        }
+        return (0, responses_js_1.sendSuccess)(reply, { data: listing });
+    }
+    catch (err) {
+        request.log.error({ err }, "Failed to fetch listing by title");
+        return (0, responses_js_1.sendError)(reply, {
+            statusCode: 500,
+            message: "Failed to fetch listing",
+        });
+    }
+};
+exports.getListingByTitle = getListingByTitle;
+const getListingBySlug = async (request, reply) => {
+    try {
+        const { slug } = request.params;
+        if (!slug) {
+            return (0, responses_js_1.sendError)(reply, {
+                statusCode: 400,
+                message: "Listing slug is required",
+            });
+        }
+        const listing = await (0, listing_services_js_1.getListingBySlugService)(slug);
+        if (!listing) {
+            return (0, responses_js_1.sendError)(reply, {
+                statusCode: 404,
+                message: "Listing not found",
+            });
+        }
+        return (0, responses_js_1.sendSuccess)(reply, { data: listing });
+    }
+    catch (err) {
+        request.log.error({ err }, "Failed to fetch listing by slug");
+        return (0, responses_js_1.sendError)(reply, {
+            statusCode: 500,
+            message: "Failed to fetch listing",
+        });
+    }
+};
+exports.getListingBySlug = getListingBySlug;
+async function updateListing(request, reply) {
     try {
         const { id } = request.params;
         const payload = request.body;
-        const normalized = normalizeListingPayload(payload);
-        const updated = await updateListingById(id, normalized);
-        return sendSuccess(reply, {
+        const normalized = (0, listings_js_1.normalizeListingPayload)(payload);
+        if (!normalized?.pricing) {
+            return (0, responses_js_1.sendError)(reply, {
+                statusCode: 400,
+                message: "pricing is required (amount OR min+max)",
+            });
+        }
+        const updated = await (0, listing_services_js_1.updateListingById)(id, normalized);
+        return (0, responses_js_1.sendSuccess)(reply, {
             statusCode: 200,
             message: "Listing updated",
             data: updated,
@@ -101,23 +160,23 @@ export async function updateListing(request, reply) {
     }
     catch (err) {
         request.log.error(err);
-        if (err instanceof AppError) {
-            return sendError(reply, {
+        if (err instanceof AppError_js_1.AppError) {
+            return (0, responses_js_1.sendError)(reply, {
                 statusCode: err.statusCode,
                 message: err.message,
             });
         }
-        return sendError(reply, {
+        return (0, responses_js_1.sendError)(reply, {
             statusCode: 500,
             message: "Failed to update listing",
         });
     }
 }
-export async function deleteListing(request, reply) {
+async function deleteListing(request, reply) {
     try {
         const { id } = request.params;
-        const result = await deleteListingById(id);
-        return sendSuccess(reply, {
+        const result = await (0, listing_services_js_1.deleteListingById)(id);
+        return (0, responses_js_1.sendSuccess)(reply, {
             statusCode: 200,
             message: "Listing deleted",
             data: result,
@@ -125,13 +184,13 @@ export async function deleteListing(request, reply) {
     }
     catch (err) {
         request.log.error(err);
-        if (err instanceof AppError) {
-            return sendError(reply, {
+        if (err instanceof AppError_js_1.AppError) {
+            return (0, responses_js_1.sendError)(reply, {
                 statusCode: err.statusCode,
                 message: err.message,
             });
         }
-        return sendError(reply, {
+        return (0, responses_js_1.sendError)(reply, {
             statusCode: 500,
             message: "Failed to delete listing",
         });

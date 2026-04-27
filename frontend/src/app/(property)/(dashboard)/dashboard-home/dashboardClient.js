@@ -27,7 +27,6 @@ const DashboardClient = () => {
       setError("");
       try {
         const data = await getOverallStats(range);
-        console.log(data)
         setStats(data);
       } catch (e) {
         console.error(e);

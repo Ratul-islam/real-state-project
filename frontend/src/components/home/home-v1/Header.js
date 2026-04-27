@@ -2,6 +2,7 @@
 
 import MainMenu from "@/components/common/MainMenu";
 import SidebarPanel from "@/components/common/sidebar-panel";
+import TranslateButtons from "@/components/translate/TranslateButton";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -36,6 +37,7 @@ const Header = () => {
             <div className="row align-items-center justify-content-center">
               <div className="col-auto">
                 <div className="d-flex align-items-center justify-content-center">
+                  <TranslateButtons/>
                   {/* <div className="logos mr40">
                     <Link className="header-logo logo1" href="/">
                       <Image

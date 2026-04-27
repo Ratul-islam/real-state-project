@@ -4,6 +4,7 @@ import MobileMenu from "@/components/common/mobile-menu";
 
 import React, { Suspense } from "react";
 import PropertyFiltering from "@/components/listing/grid-view/grid-default/PropertyFiltering";
+import { getListings } from "@/services/listing/listings.server";
 import PageLoader from "@/components/common/PageLoader";
 
 export const metadata = {
@@ -11,31 +12,15 @@ export const metadata = {
 };
 
 async function ListingsBlock() {
-  // Call YOUR Next API (same-origin) so cookies + SSR work on Vercel
-  const qs = new URLSearchParams({
+  const payload = await getListings({
     businessType: "housing society",
-    limit: "50",
-    page: "1",
+    limit: 50,
+    page: 1,
     sort: "createdAt",
     order: "desc",
   });
 
-  const r = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/api/listings?${qs.toString()}`, {
-    cache: "no-store",
-    // if you're on Next 13/14, this is okay; on older versions it won't hurt
-    credentials: "include",
-  });
-
-  if (!r.ok) {
-    // Avoid crashing the whole page if API fails
-    const err = await r.json().catch(() => null);
-    console.error("Listings fetch failed:", r.status, err);
-    return <PropertyFiltering items={[]} />;
-  }
-
-  const payload = await r.json().catch(() => null);
   const items = payload?.data?.items ?? payload?.items ?? payload?.data ?? [];
-
   return <PropertyFiltering items={items} />;
 }
 

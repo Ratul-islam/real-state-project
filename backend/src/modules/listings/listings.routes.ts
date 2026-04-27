@@ -5,7 +5,46 @@ import {
   getListingById,
   deleteListing,
   updateListing,
+  getListingByTitle,
+  getListingBySlug,
 } from "./listing.controller.js";
+
+const pricingBodySchema = {
+  anyOf: [
+    {
+      type: "object",
+      required: ["amount"],
+      properties: {
+        amount: { type: "number", minimum: 0 },
+        currency: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+    {
+      type: "object",
+      required: ["min", "max"],
+      properties: {
+        min: { type: "number", minimum: 0 },
+        max: { type: "number", minimum: 0 },
+        currency: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+  ],
+};
+
+const listingAssetSchemaBody = {
+  type: "object",
+  required: ["type", "url"],
+  properties: {
+    type: { type: "string", enum: ["image", "pdf"] },
+    url: { type: "string", minLength: 1 },
+    alt: { type: "string" },
+    pages: { type: "number", minimum: 1 },
+    order: { type: "number" },
+  },
+  additionalProperties: false,
+};
 
 export default async function listingRoutes(app: FastifyInstance) {
   app.post(
@@ -23,7 +62,7 @@ export default async function listingRoutes(app: FastifyInstance) {
             "beds",
             "baths",
             "sqft",
-            "price",
+            "pricing",
             "forRent",
             "propertyType",
             "yearBuilding",
@@ -33,8 +72,9 @@ export default async function listingRoutes(app: FastifyInstance) {
           ],
           properties: {
             title: { type: "string", minLength: 2 },
-
             description: { type: "string", default: "" },
+
+            agent: { type: "string" },
 
             media: {
               type: "object",
@@ -75,13 +115,7 @@ export default async function listingRoutes(app: FastifyInstance) {
                       properties: {
                         provider: {
                           type: "string",
-                          enum: [
-                            "youtube",
-                            "facebook",
-                            "vimeo",
-                            "tiktok",
-                            "custom",
-                          ],
+                          enum: ["youtube", "facebook", "vimeo", "tiktok", "custom"],
                         },
                         url: { type: "string", minLength: 5 },
                         embedId: { type: "string" },
@@ -108,38 +142,26 @@ export default async function listingRoutes(app: FastifyInstance) {
             baths: { type: "number", minimum: 0 },
             sqft: { type: "number", minimum: 0 },
 
-            price: { type: "number", minimum: 0 },
-            currency: { type: "string", default: "USD" },
+            pricing: pricingBodySchema,
 
             forRent: { type: "boolean" },
             featured: { type: "boolean", default: false },
 
             businessType: {
               type: "string",
-              enum: [
-                "housing society",
-                "housing construction",
-                "home solution",
-              ],
+              enum: ["housing society", "housing construction", "home solution"],
             },
 
             propertyType: {
               type: "string",
-              enum: ["Houses", "Apartments", "Villa", "Office"],
+              enum: ["Houses", "Apartments", "Villa", "Office", "Land Sharing"],
             },
 
             yearBuilding: { type: "number" },
 
             propertyStatus: {
               type: "string",
-              enum: [
-                "Pending",
-                "Active",
-                "Sold",
-                "Rented",
-                "Draft",
-                "Archived",
-              ],
+              enum: ["Pending", "Active", "Sold", "Rented", "Draft", "Archived"],
               default: "Pending",
             },
 
@@ -156,7 +178,7 @@ export default async function listingRoutes(app: FastifyInstance) {
                   "sizeSqft",
                   "bedrooms",
                   "bathrooms",
-                  "price",
+                  "pricing",
                   "image",
                 ],
                 properties: {
@@ -164,19 +186,9 @@ export default async function listingRoutes(app: FastifyInstance) {
                   sizeSqft: { type: "number", minimum: 0 },
                   bedrooms: { type: "number", minimum: 0 },
                   bathrooms: { type: "number", minimum: 0 },
-                  price: { type: "number", minimum: 0 },
-                  currency: { type: "string", default: "USD" },
 
-                  image: {
-                    type: "object",
-                    required: ["url"],
-                    properties: {
-                      url: { type: "string", minLength: 1 },
-                      alt: { type: "string", default: "" },
-                      order: { type: "number", default: 0 },
-                    },
-                    additionalProperties: false,
-                  },
+                  pricing: pricingBodySchema,
+                  image: listingAssetSchemaBody,
 
                   description: { type: "string", default: "" },
                   order: { type: "number", default: 0 },
@@ -184,17 +196,13 @@ export default async function listingRoutes(app: FastifyInstance) {
                 additionalProperties: false,
               },
             },
-
             lotSize: { type: "string", default: "" },
             rooms: { type: "number", minimum: 0, default: 0 },
             customId: { type: "string", default: "" },
             garages: { type: "number", minimum: 0, default: 0 },
             garageSize: { type: "string", default: "" },
-            availableFrom: {
-              type: "string",
-              format: "date",
-              nullable: true,
-            },
+            availableFrom: { type: "string", format: "date", nullable: true },
+
             basement: { type: "string", default: "" },
             extraDetails: { type: "string", default: "" },
             roofing: { type: "string", default: "" },
@@ -208,7 +216,7 @@ export default async function listingRoutes(app: FastifyInstance) {
         },
       },
     },
-    addListing,
+    addListing
   );
 
   app.put(
@@ -233,7 +241,7 @@ export default async function listingRoutes(app: FastifyInstance) {
             "beds",
             "baths",
             "sqft",
-            "price",
+            "pricing",
             "forRent",
             "propertyType",
             "yearBuilding",
@@ -243,8 +251,9 @@ export default async function listingRoutes(app: FastifyInstance) {
           ],
           properties: {
             title: { type: "string", minLength: 2 },
-
             description: { type: "string", default: "" },
+
+            agent: { type: "string" },
 
             media: {
               type: "object",
@@ -285,13 +294,7 @@ export default async function listingRoutes(app: FastifyInstance) {
                       properties: {
                         provider: {
                           type: "string",
-                          enum: [
-                            "youtube",
-                            "facebook",
-                            "vimeo",
-                            "tiktok",
-                            "custom",
-                          ],
+                          enum: ["youtube", "facebook", "vimeo", "tiktok", "custom"],
                         },
                         url: { type: "string", minLength: 5 },
                         embedId: { type: "string" },
@@ -318,38 +321,26 @@ export default async function listingRoutes(app: FastifyInstance) {
             baths: { type: "number", minimum: 0 },
             sqft: { type: "number", minimum: 0 },
 
-            price: { type: "number", minimum: 0 },
-            currency: { type: "string", default: "USD" },
+            pricing: pricingBodySchema,
 
             forRent: { type: "boolean" },
             featured: { type: "boolean", default: false },
 
             businessType: {
               type: "string",
-              enum: [
-                "housing society",
-                "housing construction",
-                "home solution",
-              ],
+              enum: ["housing society", "housing construction", "home solution"],
             },
 
             propertyType: {
               type: "string",
-              enum: ["Houses", "Apartments", "Villa", "Office"],
+              enum: ["Houses", "Apartments", "Villa", "Office", "Land Sharing"],
             },
 
             yearBuilding: { type: "number" },
 
             propertyStatus: {
               type: "string",
-              enum: [
-                "Pending",
-                "Active",
-                "Sold",
-                "Rented",
-                "Draft",
-                "Archived",
-              ],
+              enum: ["Pending", "Active", "Sold", "Rented", "Draft", "Archived"],
               default: "Pending",
             },
 
@@ -366,7 +357,7 @@ export default async function listingRoutes(app: FastifyInstance) {
                   "sizeSqft",
                   "bedrooms",
                   "bathrooms",
-                  "price",
+                  "pricing",
                   "image",
                 ],
                 properties: {
@@ -374,8 +365,8 @@ export default async function listingRoutes(app: FastifyInstance) {
                   sizeSqft: { type: "number", minimum: 0 },
                   bedrooms: { type: "number", minimum: 0 },
                   bathrooms: { type: "number", minimum: 0 },
-                  price: { type: "number", minimum: 0 },
-                  currency: { type: "string", default: "USD" },
+
+                  pricing: pricingBodySchema,
 
                   image: {
                     type: "object",
@@ -400,11 +391,8 @@ export default async function listingRoutes(app: FastifyInstance) {
             customId: { type: "string", default: "" },
             garages: { type: "number", minimum: 0, default: 0 },
             garageSize: { type: "string", default: "" },
-            availableFrom: {
-              type: "string",
-              format: "date",
-              nullable: true,
-            },
+            availableFrom: { type: "string", format: "date", nullable: true },
+
             basement: { type: "string", default: "" },
             extraDetails: { type: "string", default: "" },
             roofing: { type: "string", default: "" },
@@ -418,15 +406,17 @@ export default async function listingRoutes(app: FastifyInstance) {
         },
       },
     },
-    updateListing,
+    updateListing
   );
 
   app.get("/", getAllListings);
   app.get("/:id", getListingById);
+  app.get("/title/:title", getListingByTitle);
+  app.get("/slug/:slug", getListingBySlug);
 
   app.delete(
     "/:id",
     { preHandler: [(app as any).verifyAccess] },
-    deleteListing,
+    deleteListing
   );
 }

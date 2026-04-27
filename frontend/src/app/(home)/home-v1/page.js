@@ -14,13 +14,11 @@ import Hero from "@/components/home/home-v1/hero";
 import Image from "next/image";
 import Blog from "@/components/common/Blog";
 import Link from "next/link";
-import { getListings } from "@/services/listing/listings.service";
-
+import { getListings } from "@/services/listing/listings.server";
 
 export const metadata = {
   title: "Bankers' Housing Construction",
 };
-
 
 async function fetchRecentListings() {
   try {
@@ -31,18 +29,15 @@ async function fetchRecentListings() {
       order: "desc",
     });
     const items = payload?.data?.items ?? payload?.items ?? payload?.data ?? [];
+
     return Array.isArray(items) ? items : [];
   } catch {
     return [];
   }
 }
 
-
 const Home_V1 = async () => {
   const recentListings = await fetchRecentListings();
-
-
-  
 
   return (
     <>
@@ -83,8 +78,8 @@ const Home_V1 = async () => {
       {/* About Area */}
       <section className="our-about pb90">
         <div className="container">
-          <div className="row" data-aos="fade-up" data-aos-delay="300">
-            <div className="col-lg-12">
+          <div className="row" data-aos="fade-up" data-aos-delay="100">
+            <div className="col-lg-12 text-center text-lg-start">
               <h2>
                 About us <br className="d-none d-lg-block" /> Transforming the
                 Way You Live.
@@ -92,63 +87,88 @@ const Home_V1 = async () => {
             </div>
           </div>
 
-          <div className="row mt40" data-aos="fade-up" data-aos-delay="300">
-            <div className="col-lg-6">
-              <div>
+          {/* CEO Section (Image Left, Text Right) */}
+          <div className="row mt80 align-items-center" data-aos="fade-up" data-aos-delay="200">
+            <div className="col-lg-5 col-xl-5">
+              <div className="about-img-box position-relative">
                 <Image
                   width={518}
                   height={601}
-                  className="w-100 h-100 cover"
-                  src="/images/home/owner-pic.png"
-                  alt="About Twilight Builders"
+                  className="w-100 h-100 cover bdrs12"
+                  src="/images/owner-pic.png"
+                  alt="Md. Aminur Rahman Mandal - CEO"
                 />
               </div>
             </div>
-            <div className="col-lg-6">
-              <p className="about">
-                Md. Aminur Rahman Mandal <br />
-                Founder Chairman & Managing Director
+            <div className="col-lg-7 col-xl-6 offset-xl-1 mt-4 mt-lg-0">
+              <h4 className="mb-1">Md. Aminur Rahman Mandal</h4>
+              <p className="text-thm fz15 mb25">Founder Chairman & Managing Director</p>
+              
+              <p className="text mb25">
+                Aminur Rahman Mandal completed his BBA in 2007 and MBA in 2009 in Accounting from Islamic University, Kushtia.
+                He began his professional career in the banking sector and served at several leading commercial banks in Bangladesh, 
+                including United Commercial Bank, EXIM Bank, Social Islami Bank, First Security Islami Bank, and Dutch-Bangla Bank Limited. 
+                He worked as a Management Trainee and Probationary Officer during the early stage of his career (2009–2011). 
+                He later continued his career at Dutch-Bangla Bank Limited. In 2022, he resigned from Dutch-Bangla Bank Limited while serving as a Deputy Manager at a renowned branch.
               </p>
               <p className="text mb25">
-                At Twilight Builders Ltd., we believe that every project is more
-                than just bricks and mortar—it’s about building dreams, trust,
-                and lasting value. Since our inception in 2022, under the
-                visionary leadership of our founder MD Nurnnabi Miah, we have
-                been working with passion and dedication to transform ideas into
-                reality. Our mission has always been to create modern,
-                sustainable, and innovative living and working spaces that stand
-                the test of time.
+                During his professional career, he founded Bankers Housing Society in 2018 with a clear vision to deliver secure, sustainable, and value-driven residential projects for bankers, their relatives, and their family friends.
+                Under his leadership, the company has expanded its operational scope by incorporating associated ventures such as Bankers Housing Construction and Bankers Housing Development, and has also formed a platform where all can join to solve their accommodation problems in Dhaka city.
               </p>
-              <p className="text mb55">
-                Our projects range across residential, commercial, and community
-                developments. We focus on creating safe, stylish homes, modern
-                commercial spaces, and sustainable environments that not only
-                meet today’s needs but also inspire tomorrow’s growth.
+              <p className="text mb25">
+                With a forward-looking vision, Aminur Rahman Mandal is committed to establishing Bankers Housing Society, Bankers Housing Construction, and Bankers Housing Development as trusted and dependable names in the real estate sector, contributing to sustainable urban development and enhancing investor confidence for generations.
               </p>
-              <div className="text mb55">
-                <h5>At the heart of our work are the values that define us:</h5>
-                <ul className="mb0 ps-3 about-values-list">
-                  <li>
-                    Excellence: Every project is crafted with world-class
-                    quality and attention to detail.
-                  </li>
-                  <li>
-                    Trust &amp; Transparency: We believe in honesty and building
-                    long-term relationships.
-                  </li>
-                  <li>
-                    Innovation: We combine creativity and technology to create
-                    future-ready solutions.
-                  </li>
-                </ul>
-              </div>
-              {/* icon here */}
-              <div className="about-values-social d-flex align-items-center mt-3">
-                <span className="fab fa-facebook-f about-social-icon" aria-label="Facebook" />
-                <span className="fab fa-twitter about-social-icon" aria-label="Twitter" />
+              
+              <h5 className="mb-3">Our motto is "We Build Trust"</h5>
+              <ul className="mb0 ps-3 about-values-list text mb40">
+                <li><strong>Excellence:</strong> Every project is crafted with world-class quality and attention to detail.</li>
+                <li><strong>Trust & Transparency:</strong> We believe in honesty and building long-term relationships.</li>
+                <li><strong>Innovation:</strong> We combine creativity and technology to create future-ready solutions.</li>
+              </ul>
+
+              <div className="about-values-social d-flex align-items-center">
+                <span className="fab fa-facebook-f about-social-icon me-3" aria-label="Facebook" />
+                <span className="fab fa-twitter about-social-icon me-3" aria-label="Twitter" />
                 <span className="fab fa-linkedin-in about-social-icon" aria-label="LinkedIn" />
               </div>
+            </div>
+          </div>
+
+          {/* CFO Section (Text Left, Image Right Desktop | Image Top, Text Bottom Mobile) */}
+          <div className="row mt80 align-items-center" data-aos="fade-up" data-aos-delay="300">
+            <div className="col-lg-7 col-xl-6 order-2 order-lg-1 mt-4 mt-lg-0">
+              <h4 className="mb-1">Abdullah Al Galib</h4>
+              <p className="text-thm fz15 mb25">CFO – Bankers Housing Society</p>
               
+              <p className="text mb25">
+                Abdullah Al Galib completed his BBA in 2022 and MBA in 2023 in Banking and Insurance from University of Chittagong. 
+                He is currently serving as the Chief Financial Officer (CFO) at Bankers Housing Society, where he manages financial planning and strategic growth initiatives.
+              </p>
+
+              <div className="p-4 bgc-f7 bdrs12 mb40 mt30">
+                <h5 className="mb-2">Statement:</h5>
+                <p className="text mb-0 fst-italic">
+                  “We strive to be a trusted and secure housing solution and your reliable partner for a safe and trusted home.”
+                </p>
+              </div>
+
+              <div className="about-values-social d-flex align-items-center">
+                <span className="fab fa-facebook-f about-social-icon me-3" aria-label="Facebook" />
+                <span className="fab fa-twitter about-social-icon me-3" aria-label="Twitter" />
+                <span className="fab fa-linkedin-in about-social-icon" aria-label="LinkedIn" />
+              </div>
+            </div>
+            
+            <div className="col-lg-5 col-xl-5 offset-xl-1 order-1 order-lg-2">
+              <div className="about-img-box position-relative">
+                <Image
+                  width={518}
+                  height={601}
+                  className="w-100 h-100 cover bdrs12"
+                  src="/images/cfo.jpeg"
+                  alt="Abdullah Al Galib - CFO"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -167,16 +187,16 @@ const Home_V1 = async () => {
             </div>
             <div className="col-lg-3">
               <div className="text-start text-lg-end mb-3">
-                <Link className="ud-btn2" href="/grid-full-3-col">
+                <Link className="ud-btn2" href="/map">
                   See All Properties
                   <i className="fal fa-arrow-right-long" />
                 </Link>
               </div>
             </div>
           </div>
-      {/* End header */}
+          {/* End header */}
 
-      <div className="row">
+          <div className="row">
             <div className="col-lg-12" data-aos="fade-up" data-aos-delay="200">
               <div className="feature-listing-slider">
                 <FeaturedListings listings={recentListings} />

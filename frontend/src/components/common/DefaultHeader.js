@@ -6,6 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
+import TranslateButtons from "@/components/translate/TranslateButton";
+
 const DefaultHeader = () => {
   const [navbar, setNavbar] = useState(false);
 
@@ -36,6 +38,7 @@ const DefaultHeader = () => {
             <div className="row align-items-center justify-content-center">
               <div className="col-auto">
                 <div className="d-flex align-items-center justify-content-center">
+                  <TranslateButtons/>
                   {/* <div className="logos mr40">
                     <Link className="header-logo logo1" href="/">
                       <Image

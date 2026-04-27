@@ -14,30 +14,87 @@ const toNumber = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-const moneyRange = (price) => {
-  const p = toNumber(price);
-  if (!p) return { min: 0, max: 0 };
-  const min = Math.max(0, Math.floor(p * 0.7));
-  const max = Math.ceil(p * 1.3);
+// Formats money based on currency
+const formatMoney = (val, currency = "BDT") => {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(val);
+  } catch {
+    return `৳${val}`;
+  }
+};
+
+// Calculates a -30% to +30% range based on either a fixed amount or a min/max range
+const moneyRange = (pricingOrPrice) => {
+  let baseMin = 0;
+  let baseMax = 0;
+
+  // Handle if an object (like property.pricing) is passed
+  if (typeof pricingOrPrice === "object" && pricingOrPrice !== null) {
+    const amt = toNumber(pricingOrPrice.amount);
+    const pMin = toNumber(pricingOrPrice.min);
+    const pMax = toNumber(pricingOrPrice.max);
+
+    if (amt > 0) {
+      baseMin = amt;
+      baseMax = amt;
+    } else if (pMin > 0 && pMax > 0) {
+      baseMin = pMin;
+      baseMax = pMax;
+    } else if (pMin > 0) {
+      baseMin = pMin;
+      baseMax = pMin;
+    } else if (pMax > 0) {
+      baseMin = pMax;
+      baseMax = pMax;
+    }
+  } else {
+    // Handle fallback if just a flat price number/string is passed
+    const p = toNumber(pricingOrPrice);
+    if (p > 0) {
+      baseMin = p;
+      baseMax = p;
+    }
+  }
+
+  if (!baseMin && !baseMax) return { min: 0, max: 0 };
+
+  // Widen the bounds by 30% for the query
+  const min = Math.max(0, Math.floor(baseMin * 0.7));
+  const max = Math.ceil(baseMax * 1.3);
+
   return { min, max };
 };
 
 const adaptListing = (l) => {
-  const priceNumber = toNumber(l?.price);
-  const currency = l?.currency || "USD";
+  const currency = l?.currency || "BDT";
 
-  // You already format price elsewhere, but keep this component safe:
-  const priceStr = (() => {
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency,
-        maximumFractionDigits: 0,
-      }).format(priceNumber);
-    } catch {
-      return `$${priceNumber}`;
-    }
-  })();
+  console.log(l)
+
+  const amt = toNumber(l?.pricing?.amount);
+  const min = toNumber(l?.pricing?.min);
+  const max = toNumber(l?.pricing?.max);
+
+  let priceStr = "Price on Request";
+  let priceNumber = 0; // Baseline for internal logic if needed
+
+  // Handle Display Formatting for Amount vs Range
+  if (amt > 0) {
+    priceStr = formatMoney(amt, currency);
+    priceNumber = amt;
+  } else if (min > 0 && max > 0) {
+    priceStr = `${formatMoney(min, currency)} - ${formatMoney(max, currency)}`;
+    priceNumber = (min + max) / 2; // Store average for single-number logic
+  } else if (min > 0) {
+    priceStr = `From ${formatMoney(min, currency)}`;
+    priceNumber = min;
+  } else if (max > 0) {
+    priceStr = `Up to ${formatMoney(max, currency)}`;
+    priceNumber = max;
+  }
 
   return {
     id: l?._id || l?.id,
@@ -50,13 +107,12 @@ const adaptListing = (l) => {
     bath: toNumber(l?.baths),
     sqft: toNumber(l?.sqft),
     price: priceStr,
-    priceNumber,
+    priceNumber, 
     currency,
   };
 };
 
 const NearbySimilarProperty = ({ property }) => {
-  console.log("from nearby "+JSON.stringify(property))
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState([]);
 
@@ -65,17 +121,15 @@ const NearbySimilarProperty = ({ property }) => {
   const propertyType = property?.propertyType || "";
   const forRent = property?.forRent;
 
-  const basePrice = toNumber(property?.price);
+  // Pass either the pricing object or the flat price fallback to get bounds
   const { min: minPrice, max: maxPrice } = useMemo(
-    () => moneyRange(basePrice),
-    [basePrice]
+    () => moneyRange(property?.pricing || property?.price),
+    [property?.pricing, property?.price]
   );
 
   // Build “similar” query for your API
   const query = useMemo(() => {
     const q = {};
-
-    // Match rent/sale if defined
     if (typeof forRent === "boolean") q.forRent = String(forRent);
 
     // Match city if available
@@ -83,12 +137,6 @@ const NearbySimilarProperty = ({ property }) => {
 
     // Match property type if available
     if (propertyType) q.propertyType = propertyType;
-
-    // Price band around current listing (only if price exists)
-    if (basePrice > 0) {
-      q.minPrice = String(minPrice);
-      q.maxPrice = String(maxPrice);
-    }
 
     // keep it small; you can increase later
     q.limit = "10";
@@ -99,7 +147,7 @@ const NearbySimilarProperty = ({ property }) => {
     q.order = "desc";
 
     return q;
-  }, [forRent, city, propertyType, basePrice, minPrice, maxPrice]);
+  }, [forRent, city, propertyType, minPrice, maxPrice]);
 
   useEffect(() => {
     let alive = true;
@@ -113,10 +161,11 @@ const NearbySimilarProperty = ({ property }) => {
 
         // your response format: { status, message, data: { items } }
         const raw = res?.data?.items || res?.items || [];
+        
         const adapted = raw
           .map(adaptListing)
-          .filter((x) => x.id && x.id !== propertyId); // exclude current listing
-
+          .filter((x) => x.id && x.id !== propertyId);
+        console.log(adapted)
         if (alive) setItems(adapted);
       } catch (e) {
         console.error("Failed to load similar listings", e);
@@ -132,6 +181,7 @@ const NearbySimilarProperty = ({ property }) => {
     };
   }, [propertyId, query]);
 
+  console.log(items)
   if (!propertyId) return null;
 
   if (loading) {
@@ -141,6 +191,7 @@ const NearbySimilarProperty = ({ property }) => {
   if (!items.length) {
     return <div className="p-3">No similar properties found.</div>;
   }
+
 
   return (
     <Swiper
@@ -198,7 +249,7 @@ const NearbySimilarProperty = ({ property }) => {
 
               <div className="list-content">
                 <h6 className="list-title">
-                  <Link href={`/single-v1/${listing.id}`}>{listing.title}</Link>
+                  <Link href={`/single/${listing.id}`}>{listing.title}</Link>
                 </h6>
 
                 <p className="list-text">{listing.location}</p>
@@ -222,16 +273,13 @@ const NearbySimilarProperty = ({ property }) => {
                     {listing.forRent ? "For Rent" : "For Sale"}
                   </span>
 
-                  <div className="icons d-flex align-items-center">
-                    <span>
+                  <div className="icons d-flex gap-2 align-items-center" >
+                    <div>
                       <span className="flaticon-fullscreen" />
-                    </span>
-                    <span>
+                    </div>
+                    <div>
                       <span className="flaticon-new-tab" />
-                    </span>
-                    <span>
-                      <span className="flaticon-like" />
-                    </span>
+                    </div>
                   </div>
                 </div>
               </div>

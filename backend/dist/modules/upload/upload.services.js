@@ -1,26 +1,48 @@
-import fs from "node:fs";
-import fsp from "node:fs/promises";
-import path from "node:path";
-import crypto from "node:crypto";
-import { AppError } from "../../utils/AppError.js";
-export function ensureDir(dir) {
-    if (!fs.existsSync(dir))
-        fs.mkdirSync(dir, { recursive: true });
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ensureDir = ensureDir;
+exports.validateFile = validateFile;
+exports.saveFileToUploads = saveFileToUploads;
+const node_fs_1 = __importDefault(require("node:fs"));
+const promises_1 = __importDefault(require("node:fs/promises"));
+const node_path_1 = __importDefault(require("node:path"));
+const node_crypto_1 = __importDefault(require("node:crypto"));
+const AppError_js_1 = require("../../utils/AppError.js");
+function ensureDir(dir) {
+    if (!node_fs_1.default.existsSync(dir))
+        node_fs_1.default.mkdirSync(dir, { recursive: true });
 }
 const extMap = {
     "image/jpeg": "jpg",
     "image/png": "png",
     "image/webp": "webp",
     "image/gif": "gif",
+    "application/pdf": "pdf",
 };
-export function validateImage(file) {
-    if (!file.mimetype?.startsWith("image/")) {
-        throw new AppError("Only image files are allowed", 415);
+function assetTypeFromMime(mimetype) {
+    const mt = (mimetype || "").toLowerCase();
+    if (mt === "application/pdf")
+        return "pdf";
+    if (mt.startsWith("image/"))
+        return "image";
+    return null;
+}
+// ✅ validates image OR pdf
+function validateFile(file) {
+    const mimetype = (file.mimetype || "").toLowerCase();
+    const type = assetTypeFromMime(mimetype);
+    if (!type) {
+        throw new AppError_js_1.AppError("Only image or PDF files are allowed", 415);
     }
-    const ext = extMap[file.mimetype];
-    if (!ext)
-        throw new AppError("Unsupported image type", 415);
-    return ext;
+    const ext = extMap[mimetype];
+    if (!ext) {
+        // e.g. image/bmp not allowed
+        throw new AppError_js_1.AppError("Unsupported file type", 415);
+    }
+    return { ext, type };
 }
 async function safeRemoveTemp(file) {
     if (typeof file.remove === "function") {
@@ -32,46 +54,46 @@ async function safeRemoveTemp(file) {
     }
     if (file.filepath) {
         try {
-            await fsp.unlink(file.filepath);
+            await promises_1.default.unlink(file.filepath);
         }
         catch { }
     }
 }
 async function safeMoveOrCopy(srcPath, destPath) {
     try {
-        await fsp.rename(srcPath, destPath);
+        await promises_1.default.rename(srcPath, destPath);
     }
     catch {
-        await fsp.copyFile(srcPath, destPath);
-        await fsp.unlink(srcPath);
+        await promises_1.default.copyFile(srcPath, destPath);
+        await promises_1.default.unlink(srcPath);
     }
 }
-export async function saveFileToUploads(file, uploadDir) {
+async function saveFileToUploads(file, uploadDir) {
     ensureDir(uploadDir);
-    const ext = validateImage(file);
-    const filename = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}.${ext}`;
-    const destPath = path.join(uploadDir, filename);
+    const { ext, type } = validateFile(file);
+    const filename = `${Date.now()}-${node_crypto_1.default.randomBytes(8).toString("hex")}.${ext}`;
+    const destPath = node_path_1.default.join(uploadDir, filename);
     try {
         if (file.filepath) {
             await safeMoveOrCopy(file.filepath, destPath);
-            return { filename, filepath: destPath };
+            return { filename, filepath: destPath, type };
         }
         if (!file.file) {
-            throw new AppError("Invalid upload payload", 400);
+            throw new AppError_js_1.AppError("Invalid upload payload", 400);
         }
         await new Promise((resolve, reject) => {
-            const ws = fs.createWriteStream(destPath);
+            const ws = node_fs_1.default.createWriteStream(destPath);
             file.file.on("error", reject);
             ws.on("error", reject);
             ws.on("finish", resolve);
             file.file.pipe(ws);
         });
-        return { filename, filepath: destPath };
+        return { filename, filepath: destPath, type };
     }
     catch (err) {
         try {
-            if (fs.existsSync(destPath))
-                await fsp.unlink(destPath);
+            if (node_fs_1.default.existsSync(destPath))
+                await promises_1.default.unlink(destPath);
         }
         catch { }
         await safeRemoveTemp(file);

@@ -34,7 +34,6 @@ function calcMonthlyPI({ totalAmount, downPayment, annualRatePct, years }) {
 }
 
 const MortgageCalculator = ({ property }) => {
-  console.log(property)
   const suggestedTotal = property?.price ? Number(property.price) : 250000;
 
   const [inputs, setInputs] = useState({

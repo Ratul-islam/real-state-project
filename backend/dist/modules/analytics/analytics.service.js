@@ -1,7 +1,15 @@
-import mongoose from "mongoose";
-import { ListingEvent } from "./eventAnalytics.model.js";
-import { ListingStatsDaily } from "./dailyEvent.model.js";
-import { Listing } from "../listings/listing.model.js";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.trackListingEvent = trackListingEvent;
+exports.getListingStats = getListingStats;
+exports.getOverallStats = getOverallStats;
+const mongoose_1 = __importDefault(require("mongoose"));
+const eventAnalytics_model_js_1 = require("./eventAnalytics.model.js");
+const dailyEvent_model_js_1 = require("./dailyEvent.model.js");
+const listing_model_js_1 = require("../listings/listing.model.js");
 function dayStringUTC(d) {
     const yyyy = d.getUTCFullYear();
     const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -15,9 +23,9 @@ function parseRangeToDates(range) {
     return { from, to: now };
 }
 const DEDUP_WINDOW_MS = 30 * 60 * 1000;
-export async function trackListingEvent(payload) {
+async function trackListingEvent(payload) {
     const { listingId, type, visitorId } = payload;
-    if (!mongoose.isValidObjectId(listingId)) {
+    if (!mongoose_1.default.isValidObjectId(listingId)) {
         return { accepted: false, reason: "Invalid listingId" };
     }
     if (!visitorId || visitorId.length < 6) {
@@ -26,7 +34,7 @@ export async function trackListingEvent(payload) {
     const now = new Date();
     if (type === "page_view") {
         const since = new Date(now.getTime() - DEDUP_WINDOW_MS);
-        const exists = await ListingEvent.findOne({
+        const exists = await eventAnalytics_model_js_1.ListingEvent.findOne({
             listingId,
             type,
             visitorId,
@@ -36,7 +44,7 @@ export async function trackListingEvent(payload) {
             return { accepted: true, deduped: true };
         }
     }
-    await ListingEvent.create({
+    await eventAnalytics_model_js_1.ListingEvent.create({
         listingId,
         type,
         visitorId,
@@ -54,23 +62,23 @@ export async function trackListingEvent(payload) {
         inc.shareClicks = 1;
     if (type === "save_click")
         inc.saveClicks = 1;
-    await ListingStatsDaily.updateOne({ listingId, day }, {
+    await dailyEvent_model_js_1.ListingStatsDaily.updateOne({ listingId, day }, {
         $inc: inc,
         $addToSet: { visitorIds: visitorId },
         $setOnInsert: { listingId, day },
     }, { upsert: true });
-    const doc = await ListingStatsDaily.findOne({ listingId, day }).select({ visitorIds: 1 }).lean();
-    await ListingStatsDaily.updateOne({ listingId, day }, { $set: { uniqueVisitors: doc?.visitorIds?.length ?? 0 } });
+    const doc = await dailyEvent_model_js_1.ListingStatsDaily.findOne({ listingId, day }).select({ visitorIds: 1 }).lean();
+    await dailyEvent_model_js_1.ListingStatsDaily.updateOne({ listingId, day }, { $set: { uniqueVisitors: doc?.visitorIds?.length ?? 0 } });
     return { accepted: true, deduped: false };
 }
-export async function getListingStats(listingId, range = "30d") {
-    if (!mongoose.isValidObjectId(listingId)) {
+async function getListingStats(listingId, range = "30d") {
+    if (!mongoose_1.default.isValidObjectId(listingId)) {
         throw new Error("Invalid listingId");
     }
     const { from, to } = parseRangeToDates(range);
     const fromDay = dayStringUTC(from);
     const toDay = dayStringUTC(to);
-    const daily = await ListingStatsDaily.find({
+    const daily = await dailyEvent_model_js_1.ListingStatsDaily.find({
         listingId,
         day: { $gte: fromDay, $lte: toDay },
     })
@@ -87,11 +95,11 @@ export async function getListingStats(listingId, range = "30d") {
     }, { views: 0, contactClicks: 0, shareClicks: 0, saveClicks: 0, uniqueVisitors: 0 });
     return { listingId, range, from, to, totals, daily };
 }
-export async function getOverallStats(range = "30d") {
+async function getOverallStats(range = "30d") {
     const { from, to } = parseRangeToDates(range);
     const fromDay = dayStringUTC(from);
     const toDay = dayStringUTC(to);
-    const dailyAll = await ListingStatsDaily.aggregate([
+    const dailyAll = await dailyEvent_model_js_1.ListingStatsDaily.aggregate([
         { $match: { day: { $gte: fromDay, $lte: toDay } } },
         {
             $group: {
@@ -125,8 +133,8 @@ export async function getOverallStats(range = "30d") {
         return acc;
     }, { views: 0, contactClicks: 0, shareClicks: 0, saveClicks: 0, uniqueVisitors: 0 });
     const [totalListings, newListings] = await Promise.all([
-        Listing.countDocuments({}),
-        Listing.countDocuments({ createdAt: { $gte: from, $lte: to } }),
+        listing_model_js_1.Listing.countDocuments({}),
+        listing_model_js_1.Listing.countDocuments({ createdAt: { $gte: from, $lte: to } }),
     ]);
     return {
         range,

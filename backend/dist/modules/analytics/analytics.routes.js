@@ -1,5 +1,8 @@
-import { trackEventController, getListingStatsController, getOverallStatsController, } from "./analytics.controller.js";
-export default async function analyticsRoutes(fastify) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = analyticsRoutes;
+const analytics_controller_js_1 = require("./analytics.controller.js");
+async function analyticsRoutes(fastify) {
     fastify.post("/track", {
         schema: {
             body: {
@@ -15,7 +18,7 @@ export default async function analyticsRoutes(fastify) {
                 additionalProperties: true,
             },
         },
-        handler: trackEventController,
+        handler: analytics_controller_js_1.trackEventController,
     });
     fastify.get("/listing/:id", {
         schema: {
@@ -29,7 +32,7 @@ export default async function analyticsRoutes(fastify) {
                 properties: { range: { type: "string", default: "30d" } },
             },
         },
-        handler: getListingStatsController,
+        handler: analytics_controller_js_1.getListingStatsController,
     });
     fastify.get("/overall", {
         schema: {
@@ -38,6 +41,6 @@ export default async function analyticsRoutes(fastify) {
                 properties: { range: { type: "string", default: "30d" } },
             },
         },
-        handler: getOverallStatsController,
+        handler: analytics_controller_js_1.getOverallStatsController,
     });
 }

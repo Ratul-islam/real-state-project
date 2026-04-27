@@ -9,27 +9,26 @@ const options = {
 };
 
 const customStyles = {
-  option: (styles, { isFocused, isSelected, isHovered }) => {
-    return {
-      ...styles,
-      backgroundColor: isSelected
-        ? "#eb6753"
-        : isHovered
-        ? "#eb675312"
-        : isFocused
-        ? "#eb675312"
-        : undefined,
-    };
-  },
+  option: (styles, { isFocused, isSelected }) => ({
+    ...styles,
+    backgroundColor: isSelected
+      ? "#eb6753"
+      : isFocused
+      ? "#eb675312"
+      : undefined,
+  }),
 };
 
 const MultiSelectField = () => {
   const [showSelect, setShowSelect] = useState(false);
+  const [floorNo, setFloorNo] = useState("");
+
   useEffect(() => {
     setShowSelect(true);
   }, []);
 
   const fieldTitles = ["Floors no", "Energy Class", "Energy index in kWh/m2a"];
+
   return (
     <>
       {Object.keys(options).map((key, index) => (
@@ -38,19 +37,31 @@ const MultiSelectField = () => {
             <label className="heading-color ff-heading fw600 mb10">
               {fieldTitles[index]}
             </label>
+
             <div className="location-area">
-              {showSelect && (
-                <Select
-                  styles={customStyles}
-                  className="select-custom pl-0"
-                  classNamePrefix="select"
+              {key === "floorNo" ? (
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter floor number"
+                  value={floorNo}
+                  onChange={(e) => setFloorNo(e.target.value)}
                   required
-                  isMulti
-                  options={options[key].map((item) => ({
-                    value: item,
-                    label: item,
-                  }))}
                 />
+              ) : (
+                showSelect && (
+                  <Select
+                    styles={customStyles}
+                    className="select-custom pl-0"
+                    classNamePrefix="select"
+                    isMulti
+                    required
+                    options={options[key].map((item) => ({
+                      value: item,
+                      label: item,
+                    }))}
+                  />
+                )
               )}
             </div>
           </div>

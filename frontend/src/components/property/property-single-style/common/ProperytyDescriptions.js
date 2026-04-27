@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useId } from "react";
 
 const splitDescription = (text, limit = 260) => {
   const s = String(text || "").trim();
@@ -17,51 +17,54 @@ const splitDescription = (text, limit = 260) => {
 };
 
 const ProperytyDescriptions = ({ property }) => {
-  const desc = property?.description || "";
+  // ✅ still from updated schema: property.description
+  const desc = property?.description ?? "";
 
   const { first, rest } = useMemo(() => splitDescription(desc, 320), [desc]);
 
-  const safeFirst =
-    first || "No description provided for this property yet.";
+  const safeFirst = first || "No description provided for this property yet.";
+
+  // ✅ avoid duplicate ids when multiple components render on a page
+  const uid = useId();
+  const accId = `accordionFlush-${uid}`;
+  const headingId = `flush-heading-${uid}`;
+  const collapseId = `flush-collapse-${uid}`;
 
   return (
     <>
       <p className="text mb10">{safeFirst}</p>
 
-      <div className="agent-single-accordion">
-        <div className="accordion accordion-flush" id="accordionFlushExample">
-          <div className="accordion-item">
-            <div
-              id="flush-collapseOne"
-              className="accordion-collapse collapse"
-              aria-labelledby="flush-headingOne"
-              data-bs-parent="#accordionFlushExample"
-              style={{}}
-            >
-              <div className="accordion-body p-0">
-                <p className="text">
-                  {rest || ""}
-                </p>
-              </div>
-            </div>
-
-            {rest ? (
-              <h2 className="accordion-header" id="flush-headingOne">
+      {rest ? (
+        <div className="agent-single-accordion">
+          <div className="accordion accordion-flush" id={accId}>
+            <div className="accordion-item">
+              <h2 className="accordion-header" id={headingId}>
                 <button
                   className="accordion-button p-0 collapsed"
                   type="button"
                   data-bs-toggle="collapse"
-                  data-bs-target="#flush-collapseOne"
+                  data-bs-target={`#${collapseId}`}
                   aria-expanded="false"
-                  aria-controls="flush-collapseOne"
+                  aria-controls={collapseId}
                 >
                   Show more
                 </button>
               </h2>
-            ) : null}
+
+              <div
+                id={collapseId}
+                className="accordion-collapse collapse"
+                aria-labelledby={headingId}
+                data-bs-parent={`#${accId}`}
+              >
+                <div className="accordion-body p-0">
+                  <p className="text mb0">{rest}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </>
   );
 };
